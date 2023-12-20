@@ -8,6 +8,7 @@
 struct cfg_t;
 struct nvm_cfg_t;
 
+// Global defines:
 // Digital input pins
 #define DAG_KNOP GPIO_NUM_25
 #define TIMER_KNOP GPIO_NUM_12
@@ -30,7 +31,6 @@ struct nvm_cfg_t;
 
 #define ANALOG_THRESHOLD    1500
 #define DS3232_ADDRESS      0x68  // 7-bit I2C address
-
 #define MAX_TIMER_COUNT     4
 
 // structs (should be called in each file where it is needed)
@@ -62,7 +62,7 @@ typedef struct {
     uint8_t repeat;
 } timers_t;
 
-// this struct will be remembered when power turns off
+// this struct will be remembered in EEPROM when power turns off
 typedef struct {
     // timers data
     timers_t timers[MAX_TIMER_COUNT];
