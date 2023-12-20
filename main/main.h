@@ -29,7 +29,6 @@ struct nvm_cfg_t;
 #define MSCENONDE_KNOP ADC2_CHANNEL_3
 
 #define ANALOG_THRESHOLD    1500
-#define tag "SSD1306"
 #define DS3232_ADDRESS      0x68  // 7-bit I2C address
 
 #define MAX_TIMER_COUNT     4
