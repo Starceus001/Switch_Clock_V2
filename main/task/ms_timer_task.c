@@ -2,8 +2,21 @@
 #include "task.h"
 
 // declare all ms timer functions in here
-// start ms timer
-void ms_timer_start(void *pvParameters) {
+void init_ms_timer() {
+    // Create a task on the second core with ms_timer and pass the cfg struct
+    xTaskCreatePinnedToCore(
+        ms_timer,                   // Function to run on the second core
+        "ms_timer_second_core",     // Task name
+        10000,                      // Stack size (bytes)
+        NULL,                       // Task parameters (not needed in this example)
+        1,                          // Task priority
+        NULL,                       // Task handle (not needed in this example)
+        1                           // Core to run the task on (1 for the second core)
+    );
+}
+
+// ms timer
+void ms_timer(void *pvParameters) {
     // Access the cfg structure passed as a parameter
     cfg_t *Cfg = (cfg_t *)pvParameters;
 
@@ -19,7 +32,7 @@ void ms_timer_start(void *pvParameters) {
 
 
 
-
+// OLD:
     // const esp_timer_create_args_t timer_args = {
     //     .callback = &timer_callback,
     //     .arg = NULL,

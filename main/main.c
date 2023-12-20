@@ -9,26 +9,16 @@ void main(void)
 
     // run all init functions (to be declared inside task files in the task folder)
     // init ESP32 pinout
-    init_gpio();
+    init_gpio();      // "TEST" To be looked into (all done?)
 
     // init display
-    // init_display();
+    // init_display();      // "TEST" To be implemented
  
     // read RTC value into nvm_cfg
-    // read_ds3232_task();
+    // read_ds3232_task();      // "TEST" To be implemented
 
-    // start ms timer on it's own core
-    // ms_timer_start(); // On second core, in this function, check each ms all timers to set outputs
-    // Create a task on the second core with ms_timer_start and pass the cfg struct
-    xTaskCreatePinnedToCore(
-        ms_timer_start,        // Function to run on the second core
-        "ms_timer_second_core",// Task name
-        10000,                 // Stack size (bytes)
-        NULL,                  // Task parameters (not needed in this example)
-        1,                     // Task priority
-        NULL,                  // Task handle (not needed in this example)
-        1                      // Core to run the task on (1 for the second core)
-    );
+    // init ms timer that checks scheduled switchmoments and sets outputs
+    init_ms_timer();
 
     // main code (will repeat indefinitely)
     while (1) {
