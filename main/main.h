@@ -15,12 +15,7 @@ struct nvm_cfg_t;
 #define TIMER_ACTIEF_KNOP GPIO_NUM_4
 #define SCHAKELUITGANG_AANUIT_KNOP GPIO_NUM_16
 #define HERHAALSCHAKELMOMENT_KNOP GPIO_NUM_17
-
-// Digital output pins
-#define OUTPUT_1 GPIO_NUM_26
-#define OUTPUT_2 GPIO_NUM_14
-#define OUTPUT_3 GPIO_NUM_13
-#define OUTPUT_4 GPIO_NUM_2
+#define NUM_DIGITAL_BUTTONS 5
 
 // Analog input pins
 #define CLOCK_KNOP ADC1_CHANNEL_0
@@ -28,6 +23,13 @@ struct nvm_cfg_t;
 #define MINUUT_KNOP ADC1_CHANNEL_6
 #define SECONDEN_KNOP ADC1_CHANNEL_7
 #define MSCENONDE_KNOP ADC2_CHANNEL_3
+#define NUM_ANALOG_BUTTONS 5
+
+// Digital output pins
+#define OUTPUT_1 GPIO_NUM_26
+#define OUTPUT_2 GPIO_NUM_14
+#define OUTPUT_3 GPIO_NUM_13
+#define OUTPUT_4 GPIO_NUM_2
 
 #define ANALOG_THRESHOLD    1500
 #define DS3232_ADDRESS      0x68  // 7-bit I2C address

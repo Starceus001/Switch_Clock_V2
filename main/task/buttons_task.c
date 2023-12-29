@@ -1,81 +1,105 @@
 // includes
 #include "task.h"
 
-// declare all button functions in here
-// declare all esp32 functions in here
-void init_gpio() {
-    // Configure digital input pins as inputs
-        gpio_config_t digital_input_conf = {
-            .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP),
-            .mode = GPIO_MODE_INPUT,
-            .intr_type = GPIO_INTR_DISABLE,
-            .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .pull_up_en = GPIO_PULLUP_DISABLE,
-        };
-        gpio_config(&digital_input_conf);
- 
-        // Configure digital output pins as outputs
-        gpio_config_t digital_output_conf = {
-            .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3)| (1ULL << OUTPUT_4),
-            .mode = GPIO_MODE_INPUT_OUTPUT,
-            .intr_type = GPIO_INTR_DISABLE,
-            .pull_down_en = GPIO_PULLDOWN_DISABLE,
-            .pull_up_en = GPIO_PULLUP_DISABLE,
-        };
-        gpio_config(&digital_output_conf);
- 
-        // Configure analog input pins
-        adc1_config_width(ADC_WIDTH_BIT_12);
-        adc1_config_channel_atten(CLOCK_KNOP, ADC_ATTEN_DB_0);
-        adc1_config_channel_atten(UUR_KNOP, ADC_ATTEN_DB_0);
-        adc1_config_channel_atten(MINUUT_KNOP, ADC_ATTEN_DB_0);
-        adc1_config_channel_atten(SECONDEN_KNOP, ADC_ATTEN_DB_0);
-        adc1_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
+// Semaphore for synchronizing access to shared resources (e.g., flags)
+SemaphoreHandle_t buttonSemaphore;
+
+// define array with all buttons
+gpio_num_t all_buttons[NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS] = {
+    DAG_KNOP,
+    TIMER_KNOP,
+    TIMER_ACTIEF_KNOP,
+    SCHAKELUITGANG_AANUIT_KNOP,
+    HERHAALSCHAKELMOMENT_KNOP,
+    CLOCK_KNOP,
+    UUR_KNOP,
+    MINUUT_KNOP,
+    SECONDEN_KNOP,
+    MSCENONDE_KNOP
+};
+
+void handle_button_press(gpio_num_t buttonPin) {
+    if (xSemaphoreTake(buttonSemaphore, pdMS_TO_TICKS(50)) == pdTRUE) {
+        // Print the button pin number
+        printf("Button on pin %d pressed\n", buttonPin);
+
+        // You can perform additional actions here based on the button press
+        // "TEST" use this function when all button reading works to do things with the flags after a flag set (like updating a clock var with the time buttons or updating the display if chosen not to do that in the main loop)
+        // switch (buttonPin) {
+        //     case DAG_KNOP:
+        //         // Handle DAG_KNOP button press
+        //         break;
+        //     case TIMER_KNOP:
+        //         // Handle TIMER_KNOP button press
+        //         break;
+        //     // Add cases for other buttons as needed
+        // }
+
+        xSemaphoreGive(buttonSemaphore);  // Release the semaphore
+    }
 }
 
-// check all inputs?
-void check_analog_inputs_task() {
-    while (1) {
-        // Read analog input values
-        // int analog_value_1 = adc1_get_raw(MSCENONDE_KNOP);
-        // int analog_value_2 = adc1_get_raw(UUR_KNOP);
-        // int analog_value_3 = adc1_get_raw(MINUUT_KNOP);
-        // int analog_value_4 = adc1_get_raw(SECONDEN_KNOP);
+// declare all button functions in here
+void init_gpio() {
+    // Configure digital output pins as outputs
+    gpio_config_t digital_output_conf = {
+        .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
+        .mode = GPIO_MODE_OUTPUT,
+        .intr_type = GPIO_INTR_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+    };
+    gpio_config(&digital_output_conf);
 
-        // nvm_cfg.buttons.ms = adc1_get_raw(MSCENONDE_KNOP);
-        // nvm_cfg.buttons.hour = adc1_get_raw(UUR_KNOP);
-        // nvm_cfg.buttons.min = adc1_get_raw(MINUUT_KNOP);
-        // nvm_cfg.buttons.sec = adc1_get_raw(SECONDEN_KNOP);
-// "TEST" change to nvm cfg vars!
-        // Check analog values and set digital output pins accordingly
-        // if (analog_value_1 > ANALOG_THRESHOLD) {
-        //     if (xSemaphoreTake(xSemaphore, portMAX_DELAY)) {
-        //         gpio_set_level(OUTPUT_1, !gpio_get_level(OUTPUT_1));
-        //         xSemaphoreGive(xSemaphore);
-        //     }
-        // }
- 
-        // if (analog_value_2 > ANALOG_THRESHOLD) {
-        //     if (xSemaphoreTake(xSemaphore, portMAX_DELAY)) {
-        //         gpio_set_level(OUTPUT_2, !gpio_get_level(OUTPUT_2));
-        //         xSemaphoreGive(xSemaphore);
-        //     }
-        // }
- 
-        // if (analog_value_3 > ANALOG_THRESHOLD) {
-        //     if (xSemaphoreTake(xSemaphore, portMAX_DELAY)) {
-        //         gpio_set_level(OUTPUT_3, !gpio_get_level(OUTPUT_3));
-        //         xSemaphoreGive(xSemaphore);
-        //     }
-        // }
- 
-        // if (analog_value_4 > ANALOG_THRESHOLD) {
-        //     if (xSemaphoreTake(xSemaphore, portMAX_DELAY)) {
-        //         gpio_set_level(OUTPUT_4, !gpio_get_level(OUTPUT_4));
-        //         xSemaphoreGive(xSemaphore);
-        //     }
-        // }
- 
-        // vTaskDelay(pdMS_TO_TICKS(100));  // Adjust the delay based on your application requirements
+    // Configure digital and analog input pins as inputs and set up interrupts
+    gpio_config_t input_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .intr_type = GPIO_INTR_ANYEDGE,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+    };
+
+    for (int i = 0; i < NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS; i++) {
+        input_conf.pin_bit_mask = (1ULL << all_buttons[i]);
+        gpio_config(&input_conf);
+        gpio_install_isr_service(0);
+        gpio_isr_handler_add(all_buttons[i], button_isr_handler, (void*)all_buttons[i]);
     }
+
+// Analog buttons may require additional configuration (e.g., ADC setup) depending on your requirements
+    // Configure analog input pins
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(CLOCK_KNOP, ADC_ATTEN_DB_0);
+    adc1_config_channel_atten(UUR_KNOP, ADC_ATTEN_DB_0);
+    adc1_config_channel_atten(MINUUT_KNOP, ADC_ATTEN_DB_0);
+    adc1_config_channel_atten(SECONDEN_KNOP, ADC_ATTEN_DB_0);
+    adc1_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
+
+    for (int i = 0; i < NUM_ANALOG_BUTTONS; i++) {
+        // Additional configuration for analog buttons, if needed
+        // For example, configuring ADC channels and attenuations
+        // adc1_config_channel_atten(analog_buttons[i], ADC_ATTEN_DB_0);
+
+        // Add interrupt setup for analog buttons, if needed
+        // gpio_config(&input_conf);
+        // gpio_install_isr_service(0);
+        // gpio_isr_handler_add(analog_buttons[i], button_isr_handler, (void*)analog_buttons[i]);
+    }
+
+    // Create a binary semaphore for synchronizing access to shared resources
+    buttonSemaphore = xSemaphoreCreateBinary();
+}
+
+void button_isr_handler(void* arg) {
+    gpio_num_t buttonPin = (gpio_num_t)arg;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    // Set the flag corresponding to the pressed button
+    // set_button_flag(buttonPin);         // "TEST" implement this function with a switch case to set the correct flag inside the nvm_cfg!! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+    // Notify the task that a button was pressed
+    xSemaphoreGiveFromISR(buttonSemaphore, &xHigherPriorityTaskWoken);
+
+    // If using FreeRTOS, yield to the task if a higher-priority task was woken
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }

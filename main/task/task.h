@@ -30,21 +30,23 @@ extern nvm_cfg_t nvm_cfg;
 SemaphoreHandle_t cfgMutex;  // Mutex to synchronize access to cfg
 
 // task function definitions
-// buttons_task.c
+// --<< buttons_task.c >>--
 extern void init_gpio();
 
-extern void check_analog_inputs_task();
+extern void handle_button_press(gpio_num_t buttonPin);
 
-// cores_task.c
+extern void button_isr_handler(void* arg);
+
+// --<< cores_task.c >>--
 // ...
 
-// display_task.c
+// --<< display_task.c >>--
 extern void init_display();
 
-// ms_timer_task.c
+// --<< ms_timer_task.c >>--
 extern void timer_start();
 
-// rtc_task.c
+// --<< rtc_task.c >>--
 extern uint8_t dec_to_bcd(uint8_t val);
 
 extern void read_ds3232_task();
@@ -55,7 +57,7 @@ extern void set_ds3232_to_system_time();
 
 extern void synchronize_system_time_with_ds3232();
 
-// switch_timer_task.c
+// --<< switch_timer_task.c >>--
 extern void ms_timer_start(void *pvParameters);
 
 extern void timer_callback(void* arg);

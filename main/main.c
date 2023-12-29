@@ -9,7 +9,7 @@ void main(void)
 
     // run all init functions (to be declared inside task files in the task folder)
     // init ESP32 pinout
-    init_gpio();      // "TEST" To be looked into (all done?)
+    init_gpio();
 
     // init display
     // init_display();      // "TEST" To be implemented
@@ -18,7 +18,7 @@ void main(void)
     // read_ds3232_task();      // "TEST" To be implemented
 
     // init ms timer that checks scheduled switchmoments and sets outputs
-    init_ms_timer();
+    // init_ms_timer();
 
     // main code (will repeat indefinitely)
     while (1) {
