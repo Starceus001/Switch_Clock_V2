@@ -1,6 +1,8 @@
 // includes
 #include "task.h"
 
+#define DISPLAY_TAG "DISPLAY"
+
 // SSD1306_t dev;
 
 // // declare all display functions in here

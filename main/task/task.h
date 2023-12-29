@@ -37,6 +37,26 @@ extern void handle_button_press(gpio_num_t buttonPin);
 
 extern void button_isr_handler(void* arg);
 
+extern void DAG_KNOP_button_pressed();
+
+extern void TIMER_KNOP_button_pressed();
+
+extern void TIMER_ACTIEF_KNOP_button_pressed();
+
+extern void SCHAKELUITGANG_AANUIT_KNOP_button_pressed();
+
+extern void HERHAALSCHAKELMOMENT_KNOP_button_pressed();
+
+extern void CLOCK_KNOP_button_pressed();
+
+extern void UUR_KNOP_button_pressed();
+
+extern void MINUUT_KNOP_button_pressed();
+
+extern void SECONDEN_KNOP_button_pressed();
+
+extern void MSCENONDE_KNOP_button_pressed();
+
 // --<< cores_task.c >>--
 // ...
 

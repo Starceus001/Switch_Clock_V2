@@ -1,6 +1,8 @@
 // includes
 #include "task.h"
 
+#define BUTTON_TAG "BUTTONS"
+
 // Semaphore for synchronizing access to shared resources (e.g., flags)
 SemaphoreHandle_t buttonSemaphore;
 
@@ -25,16 +27,48 @@ void handle_button_press(gpio_num_t buttonPin) {
 
         // You can perform additional actions here based on the button press
         // "TEST" use this function when all button reading works to do things with the flags after a flag set (like updating a clock var with the time buttons or updating the display if chosen not to do that in the main loop)
-        // switch (buttonPin) {
-        //     case DAG_KNOP:
-        //         // Handle DAG_KNOP button press
-        //         break;
-        //     case TIMER_KNOP:
-        //         // Handle TIMER_KNOP button press
-        //         break;
-        //     // Add cases for other buttons as needed
-        // }
-
+        switch (buttonPin) {
+            case DAG_KNOP:
+                // Handle DAG_KNOP button press
+                DAG_KNOP_button_pressed();
+                break;
+            case TIMER_KNOP:
+                // Handle TIMER_KNOP button press
+                TIMER_KNOP_button_pressed();
+                break;
+            case TIMER_ACTIEF_KNOP:
+                // Handle TIMER_ACTIEF_KNOP button press
+                TIMER_ACTIEF_KNOP_button_pressed();
+                break;
+            case SCHAKELUITGANG_AANUIT_KNOP:
+                // Handle SCHAKELUITGANG_AANUIT_KNOP button press
+                SCHAKELUITGANG_AANUIT_KNOP_button_pressed();
+                break;
+            case HERHAALSCHAKELMOMENT_KNOP:
+                // Handle HERHAALSCHAKELMOMENT_KNOP button press
+                HERHAALSCHAKELMOMENT_KNOP_button_pressed();
+                break;
+            case CLOCK_KNOP:
+                // Handle CLOCK_KNOP button press
+                CLOCK_KNOP_button_pressed();
+                break;
+            case UUR_KNOP:
+                // Handle UUR_KNOP button press
+                UUR_KNOP_button_pressed();
+                break;
+            case MINUUT_KNOP:
+                // Handle MINUUT_KNOP button press
+                MINUUT_KNOP_button_pressed();
+                break;
+            case SECONDEN_KNOP:
+                // Handle SECONDEN_KNOP button press
+                SECONDEN_KNOP_button_pressed();
+                break;
+            // case MSCENONDE_KNOP:     // "TEST" look into why this button pin has the same value as UUR_KNOP button pin
+            //     // Handle MSCENONDE_KNOP button press
+            //     MSCENONDE_KNOP_button_pressed();
+            //     break;
+        }
         xSemaphoreGive(buttonSemaphore);  // Release the semaphore
     }
 }
@@ -94,6 +128,9 @@ void button_isr_handler(void* arg) {
     gpio_num_t buttonPin = (gpio_num_t)arg;
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Button %d pressed, running button functionlaity with semaphore and writing button flag", buttonPin);
+
     // Set the flag corresponding to the pressed button
     // set_button_flag(buttonPin);         // "TEST" implement this function with a switch case to set the correct flag inside the nvm_cfg!! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -103,3 +140,74 @@ void button_isr_handler(void* arg) {
     // If using FreeRTOS, yield to the task if a higher-priority task was woken
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+ 
+void DAG_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start DAG_KNOP functionality");
+
+    // "TEST" Add functionality for DAG_KNOP button press
+}
+
+void TIMER_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start TIMER_KNOP functionality");
+
+    // "TEST" Add functionality for TIMER_KNOP button press
+}
+
+void TIMER_ACTIEF_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start TIMER_ACTIEF_KNOP functionality");
+
+    // "TEST" Add functionality for TIMER_ACTIEF_KNOP button press
+}
+
+void SCHAKELUITGANG_AANUIT_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start SCHAKELUITGANG_AANUIT_KNOP functionality");
+
+    // "TEST" Add functionality for SCHAKELUITGANG_AANUIT_KNOP button press
+}
+
+void HERHAALSCHAKELMOMENT_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start HERHAALSCHAKELMOMENT_KNOP functionality");
+
+    // "TEST" Add functionality for HERHAALSCHAKELMOMENT_KNOP button press
+}
+
+void CLOCK_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start CLOCK_KNOP functionality");
+
+    // "TEST" Add functionality for CLOCK_KNOP button press
+}
+
+void UUR_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start UUR_KNOP functionality");
+
+    // "TEST" Add functionality for UUR_KNOP button press
+}
+
+void MINUUT_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start MINUUT_KNOP functionality");
+
+    // "TEST" Add functionality for MINUUT_KNOP button press
+}
+
+void SECONDEN_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start SECONDEN_KNOP functionality");
+
+    // "TEST" Add functionality for SECONDEN_KNOP button press
+}
+
+void MSCENONDE_KNOP_button_pressed() {
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Start MSCENONDE_KNOP functionality");
+
+    // "TEST" Add functionality for MSCENONDE_KNOP button press
+}
+

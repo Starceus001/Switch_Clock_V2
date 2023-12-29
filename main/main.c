@@ -2,6 +2,8 @@
 #include "main.h"
 #include "task.h"
 
+#define MAIN_TAG "MAIN"
+
 void main(void)
 {
     cfg_t cfg;

@@ -1,6 +1,8 @@
 // includes
 #include "task.h"
 
+#define RTC_TAG "RTC"
+
 // struct tm synchronized_timeinfo;        // "TEST" look into what this does
 // int timezone_offset_seconds;            // "TEST" look into what this does
 

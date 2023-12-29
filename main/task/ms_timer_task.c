@@ -1,6 +1,8 @@
 // includes
 #include "task.h"
 
+#define MS_TIMER_TAG "MS_TIMER"
+
 // declare all ms timer functions in here
 // void init_ms_timer() {
 //     // Create a task on the second core with ms_timer and pass the cfg struct
