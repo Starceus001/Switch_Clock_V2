@@ -20,13 +20,12 @@ void main(void)
     // read_ds3232_task();      // "TEST" To be implemented
 
     // init ms timer that checks scheduled switchmoments and sets outputs
-    // init_ms_timer();
+    // init_ms_timer(); // inside this function, start the timer when the rtc has given it's 1 sec flag (to be in sync with the second)
 
     // main code (will repeat indefinitely)
     while (1) {
         // run all functionalities that will continue in sequence until the end
-        // check inputs (buttons)
-        // check_analog_inputs_task(); // on first core, read all buttons and set flags, then do stuff with the flags
+        // do stuff with buttons flags on every run?
     }
 }
 

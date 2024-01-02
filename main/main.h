@@ -7,7 +7,7 @@
 
 struct cfg_t;
 struct nvm_cfg_t;
-
+ 
 // Global defines:
 // Digital input pins
 #define DAG_KNOP GPIO_NUM_25
@@ -32,36 +32,40 @@ struct nvm_cfg_t;
 #define OUTPUT_4 GPIO_NUM_2
 
 #define ANALOG_THRESHOLD    1500
-#define DS3232_ADDRESS      0x68  // 7-bit I2C address
-#define MAX_TIMER_COUNT     4
+#define DS3232_ADDRESS      0x68        // 7-bit I2C address
+#define MAX_TIMER_COUNT     3
 
 // structs (should be called in each file where it is needed)
 typedef struct {
-    uint8_t day;
-    uint8_t hour;
-    uint8_t min;
-    uint8_t sec;
-    uint8_t ms;
-    uint8_t clock;
-    uint8_t timer;
-    uint8_t timer_active;
-    uint8_t output_onoff;
-    uint8_t timer_repeat;
-} buttons_t;
-
-typedef struct {
     uint8_t clock_flag : 1;
-    uint8_t timer_flag : 1;  
+    uint8_t timer_flag : 1;
+
+    uint8_t chosen_timer;
 } flags_t;
 
 typedef struct {
-    uint16_t rtc_time;
+    uint16_t rtc_read_time;
+    uint8_t day;                        // max 7 days
+    uint8_t hour;                       // max 24 hours
+    uint8_t min;                        // max 60 min
+    uint8_t sec;                        // max 60 sec
 } rtc_t;
 
 typedef struct {
-    uint16_t time;
+    // uint16_t time;                   // look into how to bring all time data into one var? or check all individual (day, hour, min, sec, ms)
+    uint8_t set_day;                    // max 7 days
+    uint8_t set_hour;                   // max 24 hours
+    uint8_t set_min;                    // max 60 min
+    uint8_t set_sec;                    // max 60 sec
+    uint16_t set_ms;                    // max 999 ms
+    uint8_t timer_active;
     uint8_t set_value;
-    uint8_t repeat;
+
+    int8_t repeat_timer;
+    uint8_t repeat_interval_hour;       // max 24 hours
+    uint8_t repeat_interval_min;        // max 60 min
+    uint8_t repeat_interval_sec;        // max 60 sec
+    uint16_t repeat_interval_ms;        // max 999 ms
 } timers_t;
 
 // this struct will be remembered in EEPROM when power turns off
@@ -72,9 +76,6 @@ typedef struct {
 
 // this struct will empty when power turns off
 typedef struct {
-    // reading data of buttons
-    buttons_t buttons;
-    
     // flags
     flags_t flags;
 

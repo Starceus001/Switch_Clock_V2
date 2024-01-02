@@ -145,69 +145,359 @@ void DAG_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start DAG_KNOP functionality");
 
-    // "TEST" Add functionality for DAG_KNOP button press
+    // are we writing for clock?
+    if (nvm_cfg.flags.clock_flag == 1) {
+        // clock is active, did we reach end of day cycle?
+        if (nvm_cfg.rtc.day == 7) {
+            ESP_LOGI(BUTTON_TAG, "Clock day limit reached (7), resetting to 1");
+            nvm_cfg.rtc.day = 1;
+        }
+        // up day by one
+        else {
+            ESP_LOGI(BUTTON_TAG, "Raising day for clock by one to %d", nvm_cfg.rtc.day + 1);
+            nvm_cfg.rtc.day++;
+        }
+    }
+    // are we writing for timers?
+    else if (nvm_cfg.flags.timer_flag == 1) {
+        // timer is active, are we not repeating this timer? (not needed for the timer repeat interval as it is less than 1 day only)
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+            // did we reach end of day cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].set_day == 7) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment day limit reached (7), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_day = 1;
+            }
+            // up day by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising day for timer setmoment by one to %d", nvm_cfg.rtc.day + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_day++;
+            }
+        }
+        else {
+            ESP_LOGI(BUTTON_TAG, "Timer repeat interval is active, no day change allowed");
+        }
+    }
+    else {
+        // no clock or timer active, do nothing
+        ESP_LOGw(BUTTON_TAG, "No clock or timer active for day button, doing nothing");
+    }
+    return;
 }
 
 void TIMER_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start TIMER_KNOP functionality");
 
-    // "TEST" Add functionality for TIMER_KNOP button press
+    // are we doing anything with the clock now?
+    if (nvm_cfg.flags.clock_flag == 0) {
+        // no clock actions, allowed to do timer stuff
+        // first entry on this cycle?
+        if (nvm_cfg.flags.timer_flag == 0) {
+            nvm_cfg.flags.timer_flag = 1;
+            nvm_cfg.flags.chosen_timer = 0;
+        } else {
+            if (nvm_cfg.flags.chosen_timer < MAX_TIMER_COUNT) {
+                nvm_cfg.flags.chosen_timer++;
+            } else {
+                nvm_cfg.flags.timer_flag = 0;
+                nvm_cfg.flags.chosen_timer = 0;     // could be unnecessary but for good measure
+            }
+        }
+        ESP_LOGI(BUTTON_TAG, "(Cycling timers) Timer [%d] where timer_flag is %d", nvm_cfg.flags.chosen_timer, nvm_cfg.flags.timer_flag);
+    }
+
+    return;
 }
 
 void TIMER_ACTIEF_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start TIMER_ACTIEF_KNOP functionality");
 
-    // "TEST" Add functionality for TIMER_ACTIEF_KNOP button press
+    // are we doing anything with the clock now?
+    if (nvm_cfg.flags.clock_flag == 0) {
+        // no clock actions, are timer actions allowed?
+        if (nvm_cfg.flags.timer_flag == 1) {
+            // switching flag based on known state
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].timer_active == 0) {
+                cfg.timers[nvm_cfg.flags.chosen_timer].timer_active = 1;
+            } else {
+                cfg.timers[nvm_cfg.flags.chosen_timer].timer_active = 0;
+            }
+            ESP_LOGI(BUTTON_TAG, "Timer [%d] timer_active is set to %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].timer_active);
+        }
+    }
+
+    return;
 }
 
 void SCHAKELUITGANG_AANUIT_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start SCHAKELUITGANG_AANUIT_KNOP functionality");
 
-    // "TEST" Add functionality for SCHAKELUITGANG_AANUIT_KNOP button press
+    // are we doing anything with the clock now?
+    if (nvm_cfg.flags.clock_flag == 0) {
+        // no clock actions, are timer actions allowed?
+        if (nvm_cfg.flags.timer_flag == 1) {
+            // switching flag based on known state
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].set_value == 0) {
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_value = 1;
+            } else {
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_value = 0;
+            }
+        }
+        ESP_LOGI(BUTTON_TAG, "Timer [%d] set_value is set to %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].set_value);
+    }
+
+    return;
 }
 
 void HERHAALSCHAKELMOMENT_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start HERHAALSCHAKELMOMENT_KNOP functionality");
 
-    // "TEST" Add functionality for HERHAALSCHAKELMOMENT_KNOP button press
+    // are we doing anything with the clock now?
+    if (nvm_cfg.flags.clock_flag == 0) {
+        // no clock actions, are timer actions allowed?
+        if (nvm_cfg.flags.timer_flag == 1) {
+            // switching flag based on known state
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) {
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer = 1;
+            } else {
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer = 0;
+            }
+        }
+        ESP_LOGI(BUTTON_TAG, "Timer [%d] repeat_timer is set to %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer);
+    }
+
+    return;
 }
 
 void CLOCK_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start CLOCK_KNOP functionality");
 
-    // "TEST" Add functionality for CLOCK_KNOP button press
+    // are we doing anything with timers now?
+    if (nvm_cfg.flags.timer_flag == 0) {
+        // no timer actions, allowed to do clock stuff
+        // switching flag based on known state
+        if (nvm_cfg.flags.clock_flag == 0) {
+            nvm_cfg.flags.clock_flag = 1;
+        } else {
+            nvm_cfg.flags.clock_flag = 0;
+        }
+        ESP_LOGI(BUTTON_TAG, "Clock button gave %d", nvm_cfg.flags.clock_flag);
+    }
+    return;
 }
 
 void UUR_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start UUR_KNOP functionality");
 
-    // "TEST" Add functionality for UUR_KNOP button press
+    // are we writing for clock?
+    if (nvm_cfg.flags.clock_flag == 1) {
+        // clock is active, did we reach end of hour cycle?
+        if (nvm_cfg.rtc.hour == 24) {
+            ESP_LOGI(BUTTON_TAG, "Clock hour limit reached (24), resetting to 1");
+            nvm_cfg.rtc.hour = 1;
+        }
+        // up hour by one
+        else {
+            ESP_LOGI(BUTTON_TAG, "Raising hour for clock by one to %d", nvm_cfg.rtc.hour + 1);
+            nvm_cfg.rtc.hour++;
+        }
+    }
+    // are we writing for timers?
+    else if (nvm_cfg.flags.timer_flag == 1) {
+        // timer is active, are we repeating this timer?
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+            // update timer repeat interval
+            // did we reach end of hour cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour == 24) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer repeat hour limit reached (24), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour = 1;
+            }
+            // up hour by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising hour for timer repeat by one to %d", cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour++;
+            }
+        }
+        // change timer set time
+        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+            // did we reach end of hour cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].set_hour == 24) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment day limit reached (7), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_hour = 1;
+            }
+            // up hour by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising hour for timer setmoment by one to %d", cfg.timers[nvm_cfg.flags.chosen_timer].set_hour + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_hour++;
+            }
+        }
+    }
+    else {
+        // no clock or timer active, do nothing
+        ESP_LOGw(BUTTON_TAG, "No clock or timer active for hour button, doing nothing");
+    }
+    return;
 }
 
 void MINUUT_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start MINUUT_KNOP functionality");
 
-    // "TEST" Add functionality for MINUUT_KNOP button press
+    // are we writing for clock?
+    if (nvm_cfg.flags.clock_flag == 1) {
+        // clock is active, did we reach end of min cycle?
+        if (nvm_cfg.rtc.min == 60) {
+            ESP_LOGI(BUTTON_TAG, "Clock min limit reached (60), resetting to 1");
+            nvm_cfg.rtc.min = 1;
+        }
+        // up min by one
+        else {
+            ESP_LOGI(BUTTON_TAG, "Raising min for clock by one to %d", nvm_cfg.rtc.min + 1);
+            nvm_cfg.rtc.min++;
+        }
+    }
+    // are we writing for timers?
+    else if (nvm_cfg.flags.timer_flag == 1) {
+        // timer is active, are we repeating this timer?
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+            // update timer repeat interval
+            // did we reach end of min cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min == 60) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer repeat min limit reached (60), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min = 1;
+            }
+            // up min by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising min for timer repeat by one to %d", cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min++;
+            }
+        }
+        // change timer set time
+        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+            // did we reach end of min cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].set_min == 60) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment min limit reached (60), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_min = 1;
+            }
+            // up min by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising min for timer setmoment by one to %d", cfg.timers[nvm_cfg.flags.chosen_timer].set_min + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_min++;
+            }
+        }
+    }
+    else {
+        // no clock or timer active, do nothing
+        ESP_LOGw(BUTTON_TAG, "No clock or timer active for min button, doing nothing");
+    }
+
+    return;
 }
 
 void SECONDEN_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start SECONDEN_KNOP functionality");
 
-    // "TEST" Add functionality for SECONDEN_KNOP button press
+    // are we writing for clock?
+    if (nvm_cfg.flags.clock_flag == 1) {
+        // clock is active, did we reach end of sec cycle?
+        if (nvm_cfg.rtc.sec == 60) {
+            ESP_LOGI(BUTTON_TAG, "Clock sec limit reached (60), resetting to 1");
+            nvm_cfg.rtc.sec = 1;
+        }
+        // up sec by one
+        else {
+            ESP_LOGI(BUTTON_TAG, "Raising sec for clock by one to %d", nvm_cfg.rtc.sec + 1);
+            nvm_cfg.rtc.sec++;
+        }
+    }
+    // are we writing for timers?
+    else if (nvm_cfg.flags.timer_flag == 1) {
+        // timer is active, are we repeating this timer?
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+            // update timer repeat interval
+            // did we reach end of sec cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec == 60) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer repeat sec limit reached (60), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec = 1;
+            }
+            // up sec by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising sec for timer repeat by one to %d", cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec++;
+            }
+        }
+        // change timer set time
+        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+            // did we reach end of sec cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].set_sec == 60) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment sec limit reached (60), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_sec = 1;
+            }
+            // up sec by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising sec for timer setmoment by one to %d", cfg.timers[nvm_cfg.flags.chosen_timer].set_sec + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_sec++;
+            }
+        }
+    }
+    else {
+        // no clock or timer active, do nothing
+        ESP_LOGw(BUTTON_TAG, "No clock or timer active for sec button, doing nothing");
+    }
+
+    return;
 }
 
 void MSCENONDE_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start MSCENONDE_KNOP functionality");
 
-    // "TEST" Add functionality for MSCENONDE_KNOP button press
+    // are we writing for clock?
+    if (nvm_cfg.flags.clock_flag == 1) {
+        ESP_LOGI(BUTTON_TAG, "Clock flag is active, no ms change allowed");
+        return;
+    }
+    // are we writing for timers?
+    else if (nvm_cfg.flags.timer_flag == 1) {
+        // timer is active, are we repeating this timer?
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+            // update timer repeat interval
+            // did we reach end of ms cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms == 999) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer repeat ms limit reached (999), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms = 1;
+            }
+            // up ms by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising ms for timer repeat by one to %d", cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms++;
+            }
+        }
+        // change timer set time
+        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+            // did we reach end of ms cycle?
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].set_ms == 999) {
+                ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment ms limit reached (999), resetting to 1");
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_ms = 1;
+            }
+            // up ms by one
+            else {
+                ESP_LOGI(BUTTON_TAG, "Raising ms for timer setmoment by one to %d", cfg.timers[nvm_cfg.flags.chosen_timer].set_ms + 1);
+                cfg.timers[nvm_cfg.flags.chosen_timer].set_ms++;
+            }
+        }
+    }
+    else {
+        // no clock or timer active, do nothing
+        ESP_LOGw(BUTTON_TAG, "No clock or timer active for ms button, doing nothing");
+    }
+
+    return;
 }
 
