@@ -20,61 +20,65 @@ gpio_num_t all_buttons[NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS] = {
     MSCENONDE_KNOP
 };
 
+// declare all button functions in here
 void handle_button_press(gpio_num_t buttonPin) {
     if (xSemaphoreTake(buttonSemaphore, pdMS_TO_TICKS(50)) == pdTRUE) {
         // Print the button pin number
-        printf("Button on pin %d pressed\n", buttonPin);
+        ESP_LOGI("TEST", "Button on pin %d pressed", buttonPin);
 
-        // You can perform additional actions here based on the button press
         // "TEST" use this function when all button reading works to do things with the flags after a flag set (like updating a clock var with the time buttons or updating the display if chosen not to do that in the main loop)
-        switch (buttonPin) {
-            case DAG_KNOP:
-                // Handle DAG_KNOP button press
-                DAG_KNOP_button_pressed();
-                break;
-            case TIMER_KNOP:
-                // Handle TIMER_KNOP button press
-                TIMER_KNOP_button_pressed();
-                break;
-            case TIMER_ACTIEF_KNOP:
-                // Handle TIMER_ACTIEF_KNOP button press
-                TIMER_ACTIEF_KNOP_button_pressed();
-                break;
-            case SCHAKELUITGANG_AANUIT_KNOP:
-                // Handle SCHAKELUITGANG_AANUIT_KNOP button press
-                SCHAKELUITGANG_AANUIT_KNOP_button_pressed();
-                break;
-            case HERHAALSCHAKELMOMENT_KNOP:
-                // Handle HERHAALSCHAKELMOMENT_KNOP button press
-                HERHAALSCHAKELMOMENT_KNOP_button_pressed();
-                break;
-            case CLOCK_KNOP:
-                // Handle CLOCK_KNOP button press
-                CLOCK_KNOP_button_pressed();
-                break;
-            case UUR_KNOP:
-                // Handle UUR_KNOP button press
-                UUR_KNOP_button_pressed();
-                break;
-            case MINUUT_KNOP:
-                // Handle MINUUT_KNOP button press
-                MINUUT_KNOP_button_pressed();
-                break;
-            case SECONDEN_KNOP:
-                // Handle SECONDEN_KNOP button press
-                SECONDEN_KNOP_button_pressed();
-                break;
-            // case MSCENONDE_KNOP:     // "TEST" look into why this button pin has the same value as UUR_KNOP button pin
-            //     // Handle MSCENONDE_KNOP button press
-            //     MSCENONDE_KNOP_button_pressed();
-            //     break;
-        }
+        // switch (buttonPin) {
+        //     case DAG_KNOP:
+        //         // Handle DAG_KNOP button press
+        //         DAG_KNOP_button_pressed();
+        //         break;
+        //     case TIMER_KNOP:
+        //         // Handle TIMER_KNOP button press
+        //         TIMER_KNOP_button_pressed();
+        //         break;
+        //     case TIMER_ACTIEF_KNOP:
+        //         // Handle TIMER_ACTIEF_KNOP button press
+        //         TIMER_ACTIEF_KNOP_button_pressed();
+        //         break;
+        //     case SCHAKELUITGANG_AANUIT_KNOP:
+        //         // Handle SCHAKELUITGANG_AANUIT_KNOP button press
+        //         SCHAKELUITGANG_AANUIT_KNOP_button_pressed();
+        //         break;
+        //     case HERHAALSCHAKELMOMENT_KNOP:
+        //         // Handle HERHAALSCHAKELMOMENT_KNOP button press
+        //         HERHAALSCHAKELMOMENT_KNOP_button_pressed();
+        //         break;
+        //     case CLOCK_KNOP:
+        //         // Handle CLOCK_KNOP button press
+        //         CLOCK_KNOP_button_pressed();
+        //         break;
+        //     case UUR_KNOP:
+        //         // Handle UUR_KNOP button press
+        //         UUR_KNOP_button_pressed();
+        //         break;
+        //     case MINUUT_KNOP:
+        //         // Handle MINUUT_KNOP button press
+        //         MINUUT_KNOP_button_pressed();
+        //         break;
+        //     case SECONDEN_KNOP:
+        //         // Handle SECONDEN_KNOP button press
+        //         SECONDEN_KNOP_button_pressed();
+        //         break;
+        //     // case MSCENONDE_KNOP:     // "TEST" look into why this button pin has the same value as UUR_KNOP button pin
+        //     //     // Handle MSCENONDE_KNOP button press
+        //     //     MSCENONDE_KNOP_button_pressed();
+        //     //     break;
+        //     default:
+        //         // Handle unknown button press
+        //         ESP_LOGE(BUTTON_TAG, "Unknown button press, doing nothing");
+        //         break;
+        // }
         xSemaphoreGive(buttonSemaphore);  // Release the semaphore
     }
 }
 
-// declare all button functions in here
 void init_gpio() {
+    // ESP_LOGE("TEST", "Start init_gpio");
     // Configure digital output pins as outputs
     gpio_config_t digital_output_conf = {
         .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
@@ -83,24 +87,40 @@ void init_gpio() {
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .pull_up_en = GPIO_PULLUP_DISABLE,
     };
+    // ESP_LOGE("TEST", "Start gpio_config");
+    // config gpio for outputs
     gpio_config(&digital_output_conf);
 
+    // Configure analog input pins
+    // adc1_config_width(ADC_WIDTH_BIT_12);
+    // adc1_config_channel_atten(CLOCK_KNOP, ADC_ATTEN_DB_0);
+    // adc1_config_channel_atten(UUR_KNOP, ADC_ATTEN_DB_0);
+    // adc1_config_channel_atten(MINUUT_KNOP, ADC_ATTEN_DB_0);
+    // adc1_config_channel_atten(SECONDEN_KNOP, ADC_ATTEN_DB_0);
+    // adc1_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
+
     // Configure digital and analog input pins as inputs and set up interrupts
+    // gpio_config_t input_conf = {
+    //     .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP) | 
+    //                     (1ULL << CLOCK_KNOP) | (1ULL << UUR_KNOP) | (1ULL << MINUUT_KNOP) | (1ULL << SECONDEN_KNOP) | (1ULL << MSCENONDE_KNOP),
+    //     .mode = GPIO_MODE_INPUT,
+    //     .intr_type = GPIO_INTR_POSEDGE,
+    //     .pull_up_en = GPIO_PULLUP_DISABLE,
+    //     .pull_down_en = GPIO_PULLDOWN_ENABLE,
+    // };
+
     gpio_config_t input_conf = {
+        .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP),
         .mode = GPIO_MODE_INPUT,
-        .intr_type = GPIO_INTR_ANYEDGE,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_POSEDGE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_ENABLE,
     };
 
-    for (int i = 0; i < NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS; i++) {
-        input_conf.pin_bit_mask = (1ULL << all_buttons[i]);
-        gpio_config(&input_conf);
-        gpio_install_isr_service(0);
-        gpio_isr_handler_add(all_buttons[i], button_isr_handler, (void*)all_buttons[i]);
-    }
+    // ESP_LOGE("TEST", "Start gpio_install_isr_service");
+    // install isr service (once)
+    gpio_install_isr_service(1);
 
-// Analog buttons may require additional configuration (e.g., ADC setup) depending on your requirements
     // Configure analog input pins
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(CLOCK_KNOP, ADC_ATTEN_DB_0);
@@ -109,30 +129,34 @@ void init_gpio() {
     adc1_config_channel_atten(SECONDEN_KNOP, ADC_ATTEN_DB_0);
     adc1_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
 
-    for (int i = 0; i < NUM_ANALOG_BUTTONS; i++) {
-        // Additional configuration for analog buttons, if needed
-        // For example, configuring ADC channels and attenuations
-        // adc1_config_channel_atten(analog_buttons[i], ADC_ATTEN_DB_0);
+    // run gpio config for all defined buttons
+    gpio_config(&input_conf);
 
-        // Add interrupt setup for analog buttons, if needed
-        // gpio_config(&input_conf);
-        // gpio_install_isr_service(0);
-        // gpio_isr_handler_add(analog_buttons[i], button_isr_handler, (void*)analog_buttons[i]);
+    // add isr handler to each button pin
+    for (int i = 0; i < NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS; i++) {
+        // ESP_LOGE("TEST", "Looping for loop %d", i);
+        input_conf.pin_bit_mask = (1ULL << all_buttons[i]);
+        gpio_isr_handler_add(all_buttons[i], button_isr_handler, (void*)all_buttons[i]);
+        // ESP_LOGE("TEST", "gpio_isr_handler_add done");
     }
+
+    // ESP_LOGE("TEST", "All done, gonna run xSemaphoreCreateBinary");
 
     // Create a binary semaphore for synchronizing access to shared resources
     buttonSemaphore = xSemaphoreCreateBinary();
 }
 
 void button_isr_handler(void* arg) {
+    ESP_LOGE("TEST", "entered button_isr_handler"); // "TEST"
+
     gpio_num_t buttonPin = (gpio_num_t)arg;
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
     // feedback
-    ESP_LOGI(BUTTON_TAG, "Button %d pressed, running button functionlaity with semaphore and writing button flag", buttonPin);
+    // ESP_LOGI(BUTTON_TAG, "Button %d pressed, running button functionality with semaphore and writing button flag", buttonPin);
 
     // Set the flag corresponding to the pressed button
-    // set_button_flag(buttonPin);         // "TEST" implement this function with a switch case to set the correct flag inside the nvm_cfg!! <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // handle_button_press(buttonPin);
 
     // Notify the task that a button was pressed
     xSemaphoreGiveFromISR(buttonSemaphore, &xHigherPriorityTaskWoken);
@@ -179,7 +203,7 @@ void DAG_KNOP_button_pressed() {
     }
     else {
         // no clock or timer active, do nothing
-        ESP_LOGw(BUTTON_TAG, "No clock or timer active for day button, doing nothing");
+        ESP_LOGW(BUTTON_TAG, "No clock or timer active for day button, doing nothing");
     }
     return;
 }
@@ -339,7 +363,7 @@ void UUR_KNOP_button_pressed() {
     }
     else {
         // no clock or timer active, do nothing
-        ESP_LOGw(BUTTON_TAG, "No clock or timer active for hour button, doing nothing");
+        ESP_LOGW(BUTTON_TAG, "No clock or timer active for hour button, doing nothing");
     }
     return;
 }
@@ -393,7 +417,7 @@ void MINUUT_KNOP_button_pressed() {
     }
     else {
         // no clock or timer active, do nothing
-        ESP_LOGw(BUTTON_TAG, "No clock or timer active for min button, doing nothing");
+        ESP_LOGW(BUTTON_TAG, "No clock or timer active for min button, doing nothing");
     }
 
     return;
@@ -448,7 +472,7 @@ void SECONDEN_KNOP_button_pressed() {
     }
     else {
         // no clock or timer active, do nothing
-        ESP_LOGw(BUTTON_TAG, "No clock or timer active for sec button, doing nothing");
+        ESP_LOGW(BUTTON_TAG, "No clock or timer active for sec button, doing nothing");
     }
 
     return;
@@ -495,7 +519,7 @@ void MSCENONDE_KNOP_button_pressed() {
     }
     else {
         // no clock or timer active, do nothing
-        ESP_LOGw(BUTTON_TAG, "No clock or timer active for ms button, doing nothing");
+        ESP_LOGW(BUTTON_TAG, "No clock or timer active for ms button, doing nothing");
     }
 
     return;

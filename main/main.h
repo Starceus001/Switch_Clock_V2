@@ -84,6 +84,6 @@ typedef struct {
 } nvm_cfg_t;
 
 // main function definitions
-// ...
+extern void startup_logs();
 
 #endif // MAIN_H

@@ -21,13 +21,13 @@
 #include "esp_log.h"
 #include <esp_err.h>
 
-#include <main/main.h>
+#include "main.h"
 
 // Declare the structs as extern (so it can be called from any task.c file)
 extern cfg_t cfg;
 extern nvm_cfg_t nvm_cfg;
 
-SemaphoreHandle_t cfgMutex;  // Mutex to synchronize access to cfg
+// SemaphoreHandle_t cfgMutex;  // Mutex to synchronize access to cfg
 
 // task function definitions
 // --<< buttons_task.c >>--

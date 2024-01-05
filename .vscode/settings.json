@@ -15,6 +15,9 @@
     "idf.toolsPathWin": "C:\\Users\\Guido\\.espressif",
     "files.associations": {
         "task.h": "c",
-        "main.h": "c"
-    }
+        "main.h": "c",
+        "sdkconfig.h": "c"
+    },
+    "idf.portWin": "COM3",
+    "idf.flashType": "UART"
 }
