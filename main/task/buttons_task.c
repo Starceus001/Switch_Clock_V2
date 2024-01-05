@@ -73,12 +73,18 @@ void handle_button_press(gpio_num_t buttonPin) {
         //         ESP_LOGE(BUTTON_TAG, "Unknown button press, doing nothing");
         //         break;
         // }
+
+        // if writing is done in timer (timer flag high), write cfg to NVS
+        if (nvm_cfg.flags.timer_flag == 1) {
+            write_cfg_to_NVS();        // "TEST" Should we do this here? look into timings and delays and stuff during testing
+        }
+
         xSemaphoreGive(buttonSemaphore);  // Release the semaphore
     }
 }
 
 void init_gpio() {
-    // ESP_LOGE("TEST", "Start init_gpio");
+    ESP_LOGE(BUTTON_TAG, "Initialise GPIO");
     // Configure digital output pins as outputs
     gpio_config_t digital_output_conf = {
         .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
@@ -217,6 +223,7 @@ void TIMER_KNOP_button_pressed() {
         // no clock actions, allowed to do timer stuff
         // first entry on this cycle?
         if (nvm_cfg.flags.timer_flag == 0) {
+            nvm_cfg.flags.clock_flag = 0;           // could be unnecessary but for good measure
             nvm_cfg.flags.timer_flag = 1;
             nvm_cfg.flags.chosen_timer = 0;
         } else {
@@ -305,6 +312,8 @@ void CLOCK_KNOP_button_pressed() {
         // no timer actions, allowed to do clock stuff
         // switching flag based on known state
         if (nvm_cfg.flags.clock_flag == 0) {
+            nvm_cfg.flags.chosen_timer = 0;     // could be unnecessary but for good measure
+            nvm_cfg.flags.timer_flag = 0;       // could be unnecessary but for good measure
             nvm_cfg.flags.clock_flag = 1;
         } else {
             nvm_cfg.flags.clock_flag = 0;

@@ -61,7 +61,7 @@ typedef struct {
     uint8_t timer_active;
     uint8_t set_value;
 
-    int8_t repeat_timer;
+    uint8_t repeat_timer;
     uint8_t repeat_interval_hour;       // max 24 hours
     uint8_t repeat_interval_min;        // max 60 min
     uint8_t repeat_interval_sec;        // max 60 sec

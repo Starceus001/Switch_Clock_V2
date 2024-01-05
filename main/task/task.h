@@ -20,6 +20,9 @@
 #include "esp_timer.h"
 #include "esp_log.h"
 #include <esp_err.h>
+// #include <EEPROM.h>
+#include "nvs_flash.h"
+#include "nvs.h"
 
 #include "main.h"
 
@@ -57,6 +60,17 @@ extern void SECONDEN_KNOP_button_pressed();
 
 extern void MSCENONDE_KNOP_button_pressed();
 
+// --<< cfg_task.c >>--
+extern void init_cfg();
+
+extern void preset_cfg_nvmcfg();
+
+extern void cfg_print();
+
+extern void print_cfg();
+
+extern void print_nvm_cfg();
+
 // --<< cores_task.c >>--
 // ...
 
@@ -65,6 +79,13 @@ extern void init_display();
 
 // --<< ms_timer_task.c >>--
 extern void timer_start();
+
+// --<< nvs_task.c >>--
+extern void init_NVS();
+
+extern void write_cfg_to_NVS();
+
+extern void read_cfg_from_NVS();
 
 // --<< rtc_task.c >>--
 extern uint8_t dec_to_bcd(uint8_t val);
