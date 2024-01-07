@@ -247,7 +247,7 @@ void init_gpio() {
     ESP_LOGE("TEST", "finished gpio_config(&input_conf);");
 
     // add isr handler to each button pin
-    for (int i = 0; i <= (NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS); i++) {
+    for (int i = 0; i < (NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS); i++) {
         ESP_LOGE("TEST", "Looping for loop %d", i);
         input_conf.pin_bit_mask = (1ULL << all_buttons[i]);
         gpio_isr_handler_add(all_buttons[i], button_isr_handler, (void*)all_buttons[i]);
