@@ -30,8 +30,6 @@
 extern cfg_t cfg;
 extern nvm_cfg_t nvm_cfg;
 
-// SemaphoreHandle_t cfgMutex;  // Mutex to synchronize access to cfg
-
 // task function definitions
 // --<< buttons_task.c >>--
 extern void init_gpio();

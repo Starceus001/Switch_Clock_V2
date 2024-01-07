@@ -22,110 +22,214 @@ gpio_num_t all_buttons[NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS] = {
 
 // declare all button functions in here
 void handle_button_press(gpio_num_t buttonPin) {
-    if (xSemaphoreTake(buttonSemaphore, pdMS_TO_TICKS(50)) == pdTRUE) {
-        // Print the button pin number
-        ESP_LOGI("TEST", "Button on pin %d pressed", buttonPin);
+    // Print the button pin number
+    ESP_LOGI("TEST", "Button on pin %d pressed", buttonPin);
 
-        // "TEST" use this function when all button reading works to do things with the flags after a flag set (like updating a clock var with the time buttons or updating the display if chosen not to do that in the main loop)
-        // switch (buttonPin) {
-        //     case DAG_KNOP:
-        //         // Handle DAG_KNOP button press
-        //         DAG_KNOP_button_pressed();
-        //         break;
-        //     case TIMER_KNOP:
-        //         // Handle TIMER_KNOP button press
-        //         TIMER_KNOP_button_pressed();
-        //         break;
-        //     case TIMER_ACTIEF_KNOP:
-        //         // Handle TIMER_ACTIEF_KNOP button press
-        //         TIMER_ACTIEF_KNOP_button_pressed();
-        //         break;
-        //     case SCHAKELUITGANG_AANUIT_KNOP:
-        //         // Handle SCHAKELUITGANG_AANUIT_KNOP button press
-        //         SCHAKELUITGANG_AANUIT_KNOP_button_pressed();
-        //         break;
-        //     case HERHAALSCHAKELMOMENT_KNOP:
-        //         // Handle HERHAALSCHAKELMOMENT_KNOP button press
-        //         HERHAALSCHAKELMOMENT_KNOP_button_pressed();
-        //         break;
-        //     case CLOCK_KNOP:
-        //         // Handle CLOCK_KNOP button press
-        //         CLOCK_KNOP_button_pressed();
-        //         break;
-        //     case UUR_KNOP:
-        //         // Handle UUR_KNOP button press
-        //         UUR_KNOP_button_pressed();
-        //         break;
-        //     case MINUUT_KNOP:
-        //         // Handle MINUUT_KNOP button press
-        //         MINUUT_KNOP_button_pressed();
-        //         break;
-        //     case SECONDEN_KNOP:
-        //         // Handle SECONDEN_KNOP button press
-        //         SECONDEN_KNOP_button_pressed();
-        //         break;
-        //     // case MSCENONDE_KNOP:     // "TEST" look into why this button pin has the same value as UUR_KNOP button pin
-        //     //     // Handle MSCENONDE_KNOP button press
-        //     //     MSCENONDE_KNOP_button_pressed();
-        //     //     break;
-        //     default:
-        //         // Handle unknown button press
-        //         ESP_LOGE(BUTTON_TAG, "Unknown button press, doing nothing");
-        //         break;
-        // }
-
-        // if writing is done in timer (timer flag high), write cfg to NVS
-        if (nvm_cfg.flags.timer_flag == 1) {
-            write_cfg_to_NVS();        // "TEST" Should we do this here? look into timings and delays and stuff during testing
-        }
-
-        xSemaphoreGive(buttonSemaphore);  // Release the semaphore
-    }
+    // "TEST" use this function when all button reading works to do things with the flags after a flag set (like updating a clock var with the time buttons or updating the display if chosen not to do that in the main loop)
+    // switch (buttonPin) {
+    //     case DAG_KNOP:
+    //         // Handle DAG_KNOP button press
+    //         DAG_KNOP_button_pressed();
+    //         break;
+    //     case TIMER_KNOP:
+    //         // Handle TIMER_KNOP button press
+    //         TIMER_KNOP_button_pressed();
+    //         break;
+    //     case TIMER_ACTIEF_KNOP:
+    //         // Handle TIMER_ACTIEF_KNOP button press
+    //         TIMER_ACTIEF_KNOP_button_pressed();
+    //         break;
+    //     case SCHAKELUITGANG_AANUIT_KNOP:
+    //         // Handle SCHAKELUITGANG_AANUIT_KNOP button press
+    //         SCHAKELUITGANG_AANUIT_KNOP_button_pressed();
+    //         break;
+    //     case HERHAALSCHAKELMOMENT_KNOP:
+    //         // Handle HERHAALSCHAKELMOMENT_KNOP button press
+    //         HERHAALSCHAKELMOMENT_KNOP_button_pressed();
+    //         break;
+    //     case CLOCK_KNOP:
+    //         // Handle CLOCK_KNOP button press
+    //         CLOCK_KNOP_button_pressed();
+    //         break;
+    //     case UUR_KNOP:
+    //         // Handle UUR_KNOP button press
+    //         UUR_KNOP_button_pressed();
+    //         break;
+    //     case MINUUT_KNOP:
+    //         // Handle MINUUT_KNOP button press
+    //         MINUUT_KNOP_button_pressed();
+    //         break;
+    //     case SECONDEN_KNOP:
+    //         // Handle SECONDEN_KNOP button press
+    //         SECONDEN_KNOP_button_pressed();
+    //         break;
+    //     // case MSCENONDE_KNOP:     // "TEST" look into why this button pin has the same value as UUR_KNOP button pin
+    //     //     // Handle MSCENONDE_KNOP button press
+    //     //     MSCENONDE_KNOP_button_pressed();
+    //     //     break;
+    //     default:
+    //         // Handle unknown button press
+    //         ESP_LOGE(BUTTON_TAG, "Unknown button press, doing nothing");
+    //         break;
+    // }
 }
 
+void button_handle_task(void* arg) {
+    ESP_LOGE("TEST", "entered button_handle_task"); // "TEST"
+    gpio_num_t buttonPin = (gpio_num_t) arg;
+
+    // Ensure we have exclusive access to the button handling logic
+    if (xSemaphoreTake(buttonSemaphore, pdMS_TO_TICKS(50)) == pdTRUE) {
+        ESP_LOGE("TEST", "semaphore available, start handle_button_press"); // "TEST"
+        // Handle the button press
+        handle_button_press(buttonPin);
+
+        // Release the semaphore
+        xSemaphoreGive(buttonSemaphore);
+    }
+
+    ESP_LOGE("TEST", "button_handle_task done, deleting task"); // "TEST"
+    // Task is done, delete itself
+    vTaskDelete(NULL);
+}
+
+// older testcode provided by chatgpt
+// void init_gpio() {
+//     // feedback
+//     ESP_LOGI(BUTTON_TAG, "Initialize GPIO");
+
+//     // Configure digital output pins as outputs
+//     gpio_config_t digital_output_conf = {
+//         .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
+//         .mode = GPIO_MODE_OUTPUT,
+//         .intr_type = GPIO_INTR_DISABLE,
+//         .pull_down_en = GPIO_PULLDOWN_DISABLE,
+//         .pull_up_en = GPIO_PULLUP_DISABLE,
+//     };
+
+//     // config GPIO for outputs
+//     gpio_config(&digital_output_conf);
+
+//     // Configure input pins as inputs with interrupts
+//     gpio_config_t input_conf = {
+//         // .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP),
+//         .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP) | (1ULL << CLOCK_KNOP) | (1ULL << UUR_KNOP) | (1ULL << MINUUT_KNOP) | (1ULL << SECONDEN_KNOP) | (1ULL << MSCENONDE_KNOP),
+//         .mode = GPIO_MODE_INPUT,
+//         .intr_type = GPIO_INTR_POSEDGE,
+//         .pull_up_en = GPIO_PULLUP_DISABLE,
+//         .pull_down_en = GPIO_PULLDOWN_ENABLE,
+//     };
+
+//     ESP_LOGE("TEST", "Start gpio_config for all buttons");
+//     // Run GPIO config for all buttons after configuring ISR handlers
+//     gpio_config(&input_conf);
+
+
+//     ESP_LOGE("TEST", "Start gpio_install_isr_service");
+//     // Install ISR service (once)
+//     gpio_install_isr_service(0);
+
+//     // Run GPIO config for all defined buttons
+//     for (int i = 0; i < NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS; i++) {
+//         ESP_LOGE("TEST", "Looping for loop %d to set gpio for all defined buttons", i);
+//         input_conf.pin_bit_mask = (1ULL << all_buttons[i]);
+//         gpio_isr_handler_add(all_buttons[i], button_isr_handler, (void*)all_buttons[i]);
+//     }
+
+//     // Create a binary semaphore for synchronizing access to shared resources
+//     buttonSemaphore = xSemaphoreCreateBinary();
+
+//     // feedback
+//     ESP_LOGI(BUTTON_TAG, "Initialize GPIO done");
+// }
+
+
+
+// newest test code
+// void init_gpio() {
+//     // feedback
+//     ESP_LOGI(BUTTON_TAG, "Initialise GPIO");
+
+//     // Configure digital output pins as outputs
+//     gpio_config_t digital_output_conf = {
+//         .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
+//         .mode = GPIO_MODE_OUTPUT,
+//         .intr_type = GPIO_INTR_DISABLE,
+//         .pull_down_en = GPIO_PULLDOWN_DISABLE,
+//         .pull_up_en = GPIO_PULLUP_DISABLE,
+//     };
+//     // ESP_LOGE("TEST", "Start gpio_config");
+//     // config gpio for outputs
+//     gpio_config(&digital_output_conf);
+
+//     // Configure input pins as inputs with interrupts
+//     gpio_config_t input_conf = {
+//         // .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP),
+//         .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP) | (1ULL << CLOCK_KNOP) | (1ULL << UUR_KNOP) | (1ULL << MINUUT_KNOP) | (1ULL << SECONDEN_KNOP) | (1ULL << MSCENONDE_KNOP),
+//         .mode = GPIO_MODE_INPUT,
+//         .intr_type = GPIO_INTR_POSEDGE,
+//         .pull_up_en = GPIO_PULLUP_DISABLE,
+//         .pull_down_en = GPIO_PULLDOWN_ENABLE,
+//     };
+
+//     ESP_LOGE("TEST", "Start gpio_install_isr_service");
+//     // install isr service (once)
+//     gpio_install_isr_service(1);
+
+
+
+//     ESP_LOGE("TEST", "configure analog input pins?");
+//     // Configure analog input pins
+//     adc1_config_width(ADC_WIDTH_BIT_12);
+//     adc1_config_channel_atten(CLOCK_KNOP, ADC_ATTEN_DB_0);
+//     adc1_config_channel_atten(UUR_KNOP, ADC_ATTEN_DB_0);
+//     adc1_config_channel_atten(MINUUT_KNOP, ADC_ATTEN_DB_0);
+//     adc1_config_channel_atten(SECONDEN_KNOP, ADC_ATTEN_DB_0);
+//     adc1_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
+
+
+//     ESP_LOGE("TEST", "run gpio_config for all defined buttons");
+//     // run gpio config for all defined buttons
+//     gpio_config(&input_conf);
+//     ESP_LOGE("TEST", "gpio_config done");
+
+//     // Run GPIO config for all defined buttons
+//     for (int i = 0; i < NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS; i++) {
+//         ESP_LOGE("TEST", "Looping for loop %d to set gpio for all defined buttons", i);
+//         input_conf.pin_bit_mask = (1ULL << all_buttons[i]);
+//         gpio_isr_handler_add(all_buttons[i], button_isr_handler, (void*)all_buttons[i]);
+//         ESP_LOGE("TEST", "gpio_isr_handler_add done");
+//     }
+
+//     ESP_LOGE("TEST", "All done, gonna run xSemaphoreCreateBinary");
+
+//     // Create a binary semaphore for synchronizing access to shared resources
+//     buttonSemaphore = xSemaphoreCreateBinary();
+
+//     // feedback
+//     ESP_LOGI(BUTTON_TAG, "Initialise GPIO done");
+// }
+
+
+
+
+
+
+// my code that works for 5 buttons but crashes after button press (might be fixed with tasks now??)
 void init_gpio() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Initialise GPIO");
 
-    // Configure digital output pins as outputs
-    gpio_config_t digital_output_conf = {
-        .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
-        .mode = GPIO_MODE_OUTPUT,
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-    };
-    // ESP_LOGE("TEST", "Start gpio_config");
-    // config gpio for outputs
-    gpio_config(&digital_output_conf);
-
-    // Configure analog input pins
-    // adc1_config_width(ADC_WIDTH_BIT_12);
-    // adc1_config_channel_atten(CLOCK_KNOP, ADC_ATTEN_DB_0);
-    // adc1_config_channel_atten(UUR_KNOP, ADC_ATTEN_DB_0);
-    // adc1_config_channel_atten(MINUUT_KNOP, ADC_ATTEN_DB_0);
-    // adc1_config_channel_atten(SECONDEN_KNOP, ADC_ATTEN_DB_0);
-    // adc1_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
-
-    // Configure digital and analog input pins as inputs and set up interrupts
-    // gpio_config_t input_conf = {
-    //     .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP) | 
-    //                     (1ULL << CLOCK_KNOP) | (1ULL << UUR_KNOP) | (1ULL << MINUUT_KNOP) | (1ULL << SECONDEN_KNOP) | (1ULL << MSCENONDE_KNOP),
-    //     .mode = GPIO_MODE_INPUT,
-    //     .intr_type = GPIO_INTR_POSEDGE,
-    //     .pull_up_en = GPIO_PULLUP_DISABLE,
-    //     .pull_down_en = GPIO_PULLDOWN_ENABLE,
-    // };
-
     gpio_config_t input_conf = {
         .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP),
+        // .pin_bit_mask = (1ULL << DAG_KNOP) | (1ULL << TIMER_KNOP) | (1ULL << TIMER_ACTIEF_KNOP) | (1ULL << SCHAKELUITGANG_AANUIT_KNOP) | (1ULL << HERHAALSCHAKELMOMENT_KNOP) | (1ULL << CLOCK_KNOP) | (1ULL << UUR_KNOP) | (1ULL << MINUUT_KNOP) | (1ULL << SECONDEN_KNOP) | (1ULL << MSCENONDE_KNOP),
         .mode = GPIO_MODE_INPUT,
         .intr_type = GPIO_INTR_POSEDGE,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_ENABLE,
     };
 
-    // ESP_LOGE("TEST", "Start gpio_install_isr_service");
+    ESP_LOGE("TEST", "Start gpio_install_isr_service");
     // install isr service (once)
     gpio_install_isr_service(1);
 
@@ -137,18 +241,34 @@ void init_gpio() {
     adc1_config_channel_atten(SECONDEN_KNOP, ADC_ATTEN_DB_0);
     adc1_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
 
+    ESP_LOGE("TEST", "Start gpio_config(&input_conf);");
     // run gpio config for all defined buttons
     gpio_config(&input_conf);
+    ESP_LOGE("TEST", "finished gpio_config(&input_conf);");
 
     // add isr handler to each button pin
-    for (int i = 0; i < NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS; i++) {
-        // ESP_LOGE("TEST", "Looping for loop %d", i);
+    for (int i = 0; i <= (NUM_DIGITAL_BUTTONS + NUM_ANALOG_BUTTONS); i++) {
+        ESP_LOGE("TEST", "Looping for loop %d", i);
         input_conf.pin_bit_mask = (1ULL << all_buttons[i]);
         gpio_isr_handler_add(all_buttons[i], button_isr_handler, (void*)all_buttons[i]);
-        // ESP_LOGE("TEST", "gpio_isr_handler_add done");
+        ESP_LOGE("TEST", "gpio_isr_handler_add done");
     }
+    
+    ESP_LOGE("TEST", "Start output config (look at the prints above, did we get all the 10 buttons this time?)");
 
-    // ESP_LOGE("TEST", "All done, gonna run xSemaphoreCreateBinary");
+    // Configure digital output pins as outputs
+    gpio_config_t digital_output_conf = {
+        .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
+        .mode = GPIO_MODE_OUTPUT,
+        .intr_type = GPIO_INTR_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+    };
+    ESP_LOGE("TEST", "Start gpio_config(&digital_output_conf);");
+    // config gpio for outputs
+    gpio_config(&digital_output_conf);
+
+    ESP_LOGE("TEST", "All done, gonna run xSemaphoreCreateBinary");
 
     // Create a binary semaphore for synchronizing access to shared resources
     buttonSemaphore = xSemaphoreCreateBinary();
@@ -166,15 +286,97 @@ void button_isr_handler(void* arg) {
     // feedback
     // ESP_LOGI(BUTTON_TAG, "Button %d pressed, running button functionality with semaphore and writing button flag", buttonPin);
 
-    // Set the flag corresponding to the pressed button
-    // handle_button_press(buttonPin);
-
     // Notify the task that a button was pressed
-    xSemaphoreGiveFromISR(buttonSemaphore, &xHigherPriorityTaskWoken);
+    if (xSemaphoreGiveFromISR(buttonSemaphore, &xHigherPriorityTaskWoken) == pdTRUE) {
+        // Create a task to handle the button press
+        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+    }
 
     // If using FreeRTOS, yield to the task if a higher-priority task was woken
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+
+// void button_isr_handler(void* arg) {
+//     ESP_LOGE("TEST", "entered button_isr_handler"); // "TEST"
+
+//     gpio_num_t buttonPin = (gpio_num_t)arg;
+//     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+//     // feedback
+//     // ESP_LOGI(BUTTON_TAG, "Button %d pressed, running button functionality with semaphore and writing button flag", buttonPin);
+
+//     // Set the flag corresponding to the pressed button
+//     // handle_button_press(buttonPin);
+
+//     // Notify the task that a button was pressed
+//     xSemaphoreGiveFromISR(buttonSemaphore, &xHigherPriorityTaskWoken);
+
+//     // If using FreeRTOS, yield to the task if a higher-priority task was woken
+//     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  
 void DAG_KNOP_button_pressed() {
     // feedback

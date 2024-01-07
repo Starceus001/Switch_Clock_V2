@@ -67,19 +67,3 @@ void startup_logs() {
     ESP_LOGI(MAIN_TAG, "| Date: 07-01-2024                                   |");
     ESP_LOGI(MAIN_TAG, "------------------------------------------------------");
 }
-
-
-
-// NOTES:
-// this needs to be around the function code when the code accesses shared data by multiple cores
-// above the file:
-// SemaphoreHandle_t cfgMutex;  // Mutex to synchronize access to cfg
-
-// inside the function:
-// if (xSemaphoreTake(cfgMutex, portMAX_DELAY)) {
-//     // Access and modify cfg from the second core
-//     // do stuff safely with the shared data struct.
-
-//     // Release the mutex after accessing cfg
-//     xSemaphoreGive(cfgMutex);
-// }
