@@ -84,7 +84,9 @@ void handle_button_press(gpio_num_t buttonPin) {
 }
 
 void init_gpio() {
-    ESP_LOGE(BUTTON_TAG, "Initialise GPIO");
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Initialise GPIO");
+
     // Configure digital output pins as outputs
     gpio_config_t digital_output_conf = {
         .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
@@ -150,6 +152,9 @@ void init_gpio() {
 
     // Create a binary semaphore for synchronizing access to shared resources
     buttonSemaphore = xSemaphoreCreateBinary();
+
+    // feedback
+    ESP_LOGI(BUTTON_TAG, "Initialise GPIO done");
 }
 
 void button_isr_handler(void* arg) {

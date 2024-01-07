@@ -63,7 +63,7 @@ extern void MSCENONDE_KNOP_button_pressed();
 // --<< cfg_task.c >>--
 extern void init_cfg();
 
-extern void preset_cfg_nvmcfg();
+extern void preset_nvmcfg();
 
 extern void cfg_print();
 

@@ -16,6 +16,9 @@ void init_NVS() {
     }
     // log the error
     ESP_ERROR_CHECK(err);
+
+    // feedback
+    ESP_LOGI(NVS_TAG, "Initializing NVS done");
 }
 
 void write_cfg_to_NVS() {
@@ -27,58 +30,58 @@ void write_cfg_to_NVS() {
     ESP_ERROR_CHECK(nvs_open("cfg", NVS_READWRITE, &nvs_handle));
 
     // read all timer data from NVS (iterate over all timers)
-    for (int i = 0; i < MAX_TIMER_COUNT; i++) {
+    for (int i = 0; i <= MAX_TIMER_COUNT; i++) {
         // key variable to hold the key name for the NVS data
-        char key[20];
+        char key[16];
 
         // write the data from the NVS based on the created key for each variable, data will be read from our struct
         // set_day
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] set_day: %d", i, cfg.timers[i].set_day);
-        sprintf(key, "timer_%d_set_day", i);
+        sprintf(key, "tmr%d_set_day", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].set_day));
         // set_hour
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] set_hour: %d", i, cfg.timers[i].set_hour);
-        sprintf(key, "timer_%d_set_hour", i);
+        sprintf(key, "tmr%d_set_hour", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].set_hour));
         // set_min
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] set_min: %d", i, cfg.timers[i].set_min);
-        sprintf(key, "timer_%d_set_min", i);
+        sprintf(key, "tmr%d_set_min", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].set_min));
         // set_sec
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] set_sec: %d", i, cfg.timers[i].set_sec);
-        sprintf(key, "timer_%d_set_sec", i);
+        sprintf(key, "tmr%d_set_sec", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].set_sec));
         // set_ms
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] set_ms: %d", i, cfg.timers[i].set_ms);
-        sprintf(key, "timer_%d_set_ms", i);
+        sprintf(key, "tmr%d_set_ms", i);
         ESP_ERROR_CHECK(nvs_set_u16(nvs_handle, key, cfg.timers[i].set_ms));
         // timer_active
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] timer_active: %d", i, cfg.timers[i].timer_active);
-        sprintf(key, "timer_%d_active", i);
+        sprintf(key, "tmr%d_active", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].timer_active));
         // set_value
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] set_value: %d", i, cfg.timers[i].set_value);
-        sprintf(key, "timer_%d_set_value", i);
+        sprintf(key, "tmr%d_set_value", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].set_value));
         // repeat_timer
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] repeat_timer: %d", i, cfg.timers[i].repeat_timer);
-        sprintf(key, "timer_%d_repeat", i);
+        sprintf(key, "tmr%d_rpt", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].repeat_timer));
         // repeat_interval_hour
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] repeat_interval_hour: %d", i, cfg.timers[i].repeat_interval_hour);
-        sprintf(key, "timer_%d_repeat_hour", i);
+        sprintf(key, "tmr%d_rpt_hour", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].repeat_interval_hour));
         // repeat_interval_min
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] repeat_interval_min: %d", i, cfg.timers[i].repeat_interval_min);
-        sprintf(key, "timer_%d_repeat_min", i);
+        sprintf(key, "tmr%d_rpt_min", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].repeat_interval_min));
         // repeat_interval_sec
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] repeat_interval_sec: %d", i, cfg.timers[i].repeat_interval_sec);
-        sprintf(key, "timer_%d_repeat_sec", i);
+        sprintf(key, "tmr%d_rpt_sec", i);
         ESP_ERROR_CHECK(nvs_set_u8(nvs_handle, key, cfg.timers[i].repeat_interval_sec));
         // repeat_interval_ms
         ESP_LOGI(NVS_TAG, "Writing NVS - [timer %d] repeat_interval_ms: %d", i, cfg.timers[i].repeat_interval_ms);
-        sprintf(key, "timer_%d_repeat_ms", i);
+        sprintf(key, "tmr%d_rpt_ms", i);
         ESP_ERROR_CHECK(nvs_set_u16(nvs_handle, key, cfg.timers[i].repeat_interval_ms));
     }
 
@@ -100,58 +103,58 @@ void read_cfg_from_NVS() {
     ESP_ERROR_CHECK(nvs_open("cfg", NVS_READONLY, &nvs_handle));
 
     // read individual components of the struct
-    for (int i = 0; i < MAX_TIMER_COUNT; i++) {
+    for (int i = 0; i <= MAX_TIMER_COUNT; i++) {
         // key variable to hold the key name for the NVS data
-        char key[20];
+        char key[16];
 
         // read the data from the NVS based on the created key for each variable, data will be read into our struct
         // set_day
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] set_day: %d", i, cfg.timers[i].set_day);
-        sprintf(key, "timer_%d_set_day", i);
+        sprintf(key, "tmr%d_set_day", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].set_day));
         // set_hour
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] set_hour: %d", i, cfg.timers[i].set_hour);
-        sprintf(key, "timer_%d_set_hour", i);
+        sprintf(key, "tmr%d_set_hour", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].set_hour));
         // set_min
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] set_min: %d", i, cfg.timers[i].set_min);
-        sprintf(key, "timer_%d_set_min", i);
+        sprintf(key, "tmr%d_set_min", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].set_min));
         // set_sec
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] set_sec: %d", i, cfg.timers[i].set_sec);
-        sprintf(key, "timer_%d_set_sec", i);
+        sprintf(key, "tmr%d_set_sec", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].set_sec));
         // set_ms
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] set_ms: %d", i, cfg.timers[i].set_ms);
-        sprintf(key, "timer_%d_set_ms", i);
+        sprintf(key, "tmr%d_set_ms", i);
         ESP_ERROR_CHECK(nvs_get_u16(nvs_handle, key, &cfg.timers[i].set_ms));
         // timer_active
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] timer_active: %d", i, cfg.timers[i].timer_active);
-        sprintf(key, "timer_%d_active", i);
+        sprintf(key, "tmr%d_active", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].timer_active));
         // set_value
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] set_value: %d", i, cfg.timers[i].set_value);
-        sprintf(key, "timer_%d_set_value", i);
+        sprintf(key, "tmr%d_set_value", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].set_value));
         // repeat_timer
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] repeat_timer: %d", i, cfg.timers[i].repeat_timer);
-        sprintf(key, "timer_%d_repeat", i);
+        sprintf(key, "tmr%d_rpt", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].repeat_timer));
         // repeat_interval_hour
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] repeat_interval_hour: %d", i, cfg.timers[i].repeat_interval_hour);
-        sprintf(key, "timer_%d_repeat_hour", i);
+        sprintf(key, "tmr%d_rpt_hour", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].repeat_interval_hour));
         // repeat_interval_min
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] repeat_interval_min: %d", i, cfg.timers[i].repeat_interval_min);
-        sprintf(key, "timer_%d_repeat_min", i);
+        sprintf(key, "tmr%d_rpt_min", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].repeat_interval_min));
         // repeat_interval_sec
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] repeat_interval_sec: %d", i, cfg.timers[i].repeat_interval_sec);
-        sprintf(key, "timer_%d_repeat_sec", i);
+        sprintf(key, "tmr%d_rpt_sec", i);
         ESP_ERROR_CHECK(nvs_get_u8(nvs_handle, key, &cfg.timers[i].repeat_interval_sec));
         // repeat_interval_ms
         ESP_LOGI(NVS_TAG, "Reading NVS - [timer %d] repeat_interval_ms: %d", i, cfg.timers[i].repeat_interval_ms);
-        sprintf(key, "timer_%d_repeat_ms", i);
+        sprintf(key, "tmr%d_rpt_ms", i);
         ESP_ERROR_CHECK(nvs_get_u16(nvs_handle, key, &cfg.timers[i].repeat_interval_ms));
     }
     
@@ -159,7 +162,7 @@ void read_cfg_from_NVS() {
     nvs_close(nvs_handle);
 
     // feedback
-    ESP_LOGI(NVS_TAG, "Read NVS to cfg done");
+    ESP_LOGI(NVS_TAG, "Read cfg from NVS done");
 }
 
 

@@ -4,9 +4,9 @@
 #define CFG_TAG "CFG"
 
 // declare all cfg functions in here
-void preset_cfg_nvmcfg() {
+void preset_nvmcfg() {
     // feedback
-    ESP_LOGI(CFG_TAG, "Preset cfg and nvm_cfg");
+    ESP_LOGI(CFG_TAG, "Preset nvm_cfg");
 
     // init flags preset values
     nvm_cfg.flags.clock_flag = 0;
@@ -19,20 +19,26 @@ void preset_cfg_nvmcfg() {
     nvm_cfg.rtc.hour = 0;
     nvm_cfg.rtc.min = 0;
     nvm_cfg.rtc.sec = 0;
+
+    // feedback
+    ESP_LOGI(CFG_TAG, "Preset nvm_cfg done");
 }
 
 void init_cfg() {
     // feedback
     ESP_LOGI(CFG_TAG, "Initialize cfg");
+
+    // fill cfg and nvm cfg with preset values
+    preset_nvmcfg();
     
     // init nvs
     init_NVS();
 
-    // fill cfg and nvm cfg with preset values
-    preset_cfg_nvmcfg();
-
     // read the cfg_t struct from NVS
     read_cfg_from_NVS();
+
+    // feedback
+    ESP_LOGI(CFG_TAG, "Initialize cfg done");
 }
 
 void cfg_print() {
@@ -44,13 +50,13 @@ void cfg_print() {
 }
 
 void print_cfg() {
+    // feedback
     ESP_LOGI(CFG_TAG, "Printing cfg");
 
     ESP_LOGI(CFG_TAG, "------------------------------------------------------");
     ESP_LOGI(CFG_TAG, "[TIMER] Timer count: %d", MAX_TIMER_COUNT+1);
     // loop over all timers
-    for (int i = 0; i < MAX_TIMER_COUNT; i++) {
-        ESP_LOGI(CFG_TAG, "Timer %d:", i);
+    for (int i = 0; i <= MAX_TIMER_COUNT; i++) {
         ESP_LOGI(CFG_TAG, "[TIMER %d] set_day: %d", i, cfg.timers[i].set_day);
         ESP_LOGI(CFG_TAG, "[TIMER %d] set_hour: %d", i, cfg.timers[i].set_hour);
         ESP_LOGI(CFG_TAG, "[TIMER %d] set_min: %d", i, cfg.timers[i].set_min);
@@ -65,9 +71,13 @@ void print_cfg() {
         ESP_LOGI(CFG_TAG, "[TIMER %d] repeat_interval_ms: %d", i, cfg.timers[i].repeat_interval_ms);
     }
     ESP_LOGI(CFG_TAG, "------------------------------------------------------");
+
+    // feedback
+    ESP_LOGI(CFG_TAG, "Printing cfg done");
 }
 
 void print_nvm_cfg() {
+    // feedback
     ESP_LOGI(CFG_TAG, "Printing nvm_cfg");
 
     // flags
@@ -83,4 +93,7 @@ void print_nvm_cfg() {
     ESP_LOGI(CFG_TAG, "[RTC] min: %d", nvm_cfg.rtc.min);
     ESP_LOGI(CFG_TAG, "[RTC] sec: %d", nvm_cfg.rtc.sec);
     ESP_LOGI(CFG_TAG, "------------------------------------------------------");
+
+    // feedback
+    ESP_LOGI(CFG_TAG, "Printing nvm_cfg done");
 }

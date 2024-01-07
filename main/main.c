@@ -4,6 +4,10 @@
 
 #define MAIN_TAG "MAIN"
 
+// Define the structs
+cfg_t cfg;
+nvm_cfg_t nvm_cfg;
+
 void app_main(void)
 {
     // feedback
@@ -15,8 +19,6 @@ void app_main(void)
 
     // init ESP32 pinout
     init_gpio();
-
-    tester();   // "TEST" call test function to see if cfg can be accessed from other files
 
     // read RTC value into nvm_cfg
     ESP_LOGI(MAIN_TAG, "Reading RTC");    // move into init function into task folder
@@ -62,7 +64,7 @@ void startup_logs() {
     ESP_LOGI(MAIN_TAG, "| Education: HBO Elektrotechniek                     |");
     ESP_LOGI(MAIN_TAG, "| Institute: NHL Stenden Leeuwarden                  |");
     ESP_LOGI(MAIN_TAG, "| Teacher: Rieno Moedt                               |");
-    ESP_LOGI(MAIN_TAG, "| Date: 04-01-2024                                   |");
+    ESP_LOGI(MAIN_TAG, "| Date: 07-01-2024                                   |");
     ESP_LOGI(MAIN_TAG, "------------------------------------------------------");
 }
 
