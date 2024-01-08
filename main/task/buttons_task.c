@@ -142,7 +142,7 @@ void init_gpio() {
     // config gpio for outputs
     gpio_config(&digital_output_conf);
 
-// FINISHERS -----------------------------------------------------------------------------------
+// FINISHERS ----------------------------------------------------------------------------------------
     // Create a binary semaphore for synchronizing access to shared resources
     buttonSemaphore = xSemaphoreCreateBinary();
 
@@ -168,6 +168,8 @@ void digital_button_isr_handler(void* arg) {
 // task that continuously monitors analog pins
 void analog_button_check_task(void* arg) {
     uint8_t adc_value;
+    TickType_t lastPressTime[NUM_ANALOG_BUTTONS] = {0};
+
     while (1) {
         // check analog pins for button presses
         for (int i = 0; i < NUM_ANALOG_BUTTONS; i++) {
@@ -190,10 +192,30 @@ void analog_button_check_task(void* arg) {
                 adc_value = adc1_get_raw(buttonPin);
             }
 
-            // check if button press is correct with threshold
+            // check if button press is correct with threshold and debouncing
             if (adc_value > ANALOG_THRESHOLD) {
-                // analog button press detected, create a task to handle it
-                xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+                // check if enough time has passed since the last press
+                TickType_t currentTime = xTaskGetTickCount();
+                if ((currentTime - lastPressTime[i]) > pdMS_TO_TICKS(DEBOUNCE_TIME_MS)) {
+                    // is CLOCK_KNOP button pressed? (only valid if last press was at least 1 sec ago)
+                    if (i == 0) {
+                        if ((currentTime - lastPressTime[0]) > pdMS_TO_TICKS(1000)) {
+                            // analog button press detected, create a task to handle it
+                            xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+
+                            // update the last press time
+                            lastPressTime[i] = currentTime;
+                        }
+                    }
+                    // all other buttons
+                    else {
+                        // analog button press detected, create a task to handle it
+                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+
+                        // update the last press time
+                        lastPressTime[i] = currentTime;
+                    }
+                }
             }
         }
 
@@ -202,23 +224,9 @@ void analog_button_check_task(void* arg) {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
+// ---------------------------------------------------------------------------------------------------------------------------------------------
+// BUTTON FUNCTIONS
+// ---------------------------------------------------------------------------------------------------------------------------------------------
 void DAG_KNOP_button_pressed() {
     // feedback
     ESP_LOGI(BUTTON_TAG, "Start DAG_KNOP functionality");
