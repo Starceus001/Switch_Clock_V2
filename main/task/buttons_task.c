@@ -258,7 +258,7 @@ void DAG_KNOP_button_pressed() {
     // are we writing for timers?
     else if (nvm_cfg.flags.timer_flag == 1) {
         // timer is active, are we not repeating this timer? (not needed for the timer repeat interval as it is less than 1 day only)
-        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) {
             // did we reach end of day cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].set_day == 7) {
                 ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment day limit reached (7), resetting to 1");
@@ -364,9 +364,19 @@ void HERHAALSCHAKELMOMENT_KNOP_button_pressed() {
         if (nvm_cfg.flags.timer_flag == 1) {
             // switching flag based on known state
             if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) {
+                // first entry
                 cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer = 1;
+            } else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+                // leaving without setting to 0 (still first entry)
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer = 2;
             } else {
                 cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer = 0;
+
+                // calculate repeat interval to ms
+                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms = cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour * 3600000 +
+                                              cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min * 60000 +
+                                              cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec * 1000 +
+                                              cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms;
             }
         }
         ESP_LOGI(BUTTON_TAG, "Timer [%d] repeat_timer is set to %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer);
@@ -389,8 +399,11 @@ void CLOCK_KNOP_button_pressed() {
             nvm_cfg.flags.clock_flag = 1;
         } else {
             nvm_cfg.flags.clock_flag = 0;
-            // "TEST" Set cfg rtc time to system time
-            // "TEST" Set cfg time to RTC
+            // Set cfg time to RTC
+            set_ds3232_time(nvm_cfg.rtc.sec, nvm_cfg.rtc.min, nvm_cfg.rtc.hour, nvm_cfg.rtc.day);
+
+            // Set cfg rtc time to system time
+            set_system_time_from_ds3232(nvm_cfg.rtc.sec, nvm_cfg.rtc.min, nvm_cfg.rtc.hour, nvm_cfg.rtc.day, PRESET_MONTH, PRESET_YEAR);
         }
         ESP_LOGI(BUTTON_TAG, "Clock button gave %d", nvm_cfg.flags.clock_flag);
     }
@@ -417,7 +430,7 @@ void UUR_KNOP_button_pressed() {
     // are we writing for timers?
     else if (nvm_cfg.flags.timer_flag == 1) {
         // timer is active, are we repeating this timer?
-        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1 || cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 2) {
             // update timer repeat interval
             // did we reach end of hour cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour == 24) {
@@ -431,7 +444,7 @@ void UUR_KNOP_button_pressed() {
             }
         }
         // change timer set time
-        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) {
             // did we reach end of hour cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].set_hour == 24) {
                 ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment day limit reached (7), resetting to 1");
@@ -471,7 +484,7 @@ void MINUUT_KNOP_button_pressed() {
     // are we writing for timers?
     else if (nvm_cfg.flags.timer_flag == 1) {
         // timer is active, are we repeating this timer?
-        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1 || cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 2) {
             // update timer repeat interval
             // did we reach end of min cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min == 60) {
@@ -485,7 +498,7 @@ void MINUUT_KNOP_button_pressed() {
             }
         }
         // change timer set time
-        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) {
             // did we reach end of min cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].set_min == 60) {
                 ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment min limit reached (60), resetting to 1");
@@ -526,7 +539,7 @@ void SECONDEN_KNOP_button_pressed() {
     // are we writing for timers?
     else if (nvm_cfg.flags.timer_flag == 1) {
         // timer is active, are we repeating this timer?
-        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1 || cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 2) {
             // update timer repeat interval
             // did we reach end of sec cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec == 60) {
@@ -540,7 +553,7 @@ void SECONDEN_KNOP_button_pressed() {
             }
         }
         // change timer set time
-        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) {
             // did we reach end of sec cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].set_sec == 60) {
                 ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment sec limit reached (60), resetting to 1");
@@ -573,7 +586,7 @@ void MSCENONDE_KNOP_button_pressed() {
     // are we writing for timers?
     else if (nvm_cfg.flags.timer_flag == 1) {
         // timer is active, are we repeating this timer?
-        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+        if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1 || cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 2) {
             // update timer repeat interval
             // did we reach end of ms cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms == 999) {
@@ -587,7 +600,7 @@ void MSCENONDE_KNOP_button_pressed() {
             }
         }
         // change timer set time
-        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer != 1) {
+        else if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) {
             // did we reach end of ms cycle?
             if (cfg.timers[nvm_cfg.flags.chosen_timer].set_ms == 999) {
                 ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment ms limit reached (999), resetting to 1");

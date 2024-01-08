@@ -54,7 +54,17 @@ struct nvm_cfg_t;
 #define ANALOG_DEBOUNCE_DELAY_MS                200
 #define DIGITAL_DEBOUNCE_DELAY                  500
 
+#define PRESET_MONTH                            1          // 1 through 12
+#define PRESET_YEAR                             2024
+
 SSD1306_t dev;
+
+// Global array's
+// outputs
+const gpio_num_t output_pins[3] = {OUTPUT_1, OUTPUT_2, OUTPUT_3, OUTPUT_4};
+
+// periodic timers (NOT actual cfg timers!)
+esp_timer_handle_t periodic_timers[MAX_TIMER_COUNT];
 
 // structs (should be called in each file where it is needed)
 typedef struct {
@@ -72,7 +82,6 @@ typedef struct {
 } flags_t;
 
 typedef struct {
-    uint16_t rtc_read_time;
     uint8_t day;                        // max 7 days
     uint8_t hour;                       // max 24 hours
     uint8_t min;                        // max 60 min
@@ -81,7 +90,6 @@ typedef struct {
 
 
 typedef struct {
-    // uint16_t time;                   // look into how to bring all time data into one var? or check all individual (day, hour, min, sec, ms)
     uint8_t set_day;                    // max 7 days
     uint8_t set_hour;                   // max 24 hours
     uint8_t set_min;                    // max 60 min
@@ -91,10 +99,12 @@ typedef struct {
     uint8_t set_value;
 
     uint8_t repeat_timer;
+    uint8_t setting_timer_output_useonce : 1;
     uint8_t repeat_interval_hour;       // max 24 hours
     uint8_t repeat_interval_min;        // max 60 min
     uint8_t repeat_interval_sec;        // max 60 sec
     uint16_t repeat_interval_ms;        // max 999 ms
+    uint32_t interval_in_ms;            // max 86.400.000 ms (24 hours)
 } timers_t;
 
 // this struct will be remembered in EEPROM when power turns off

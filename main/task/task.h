@@ -78,8 +78,18 @@ extern void print_cfg();
 
 extern void print_nvm_cfg();
 
-// --<< cores_task.c >>--
-// ...
+// --<< cli_task.c >>--
+extern void read_cli_constant();
+
+extern void handle_command(const char* command);
+
+extern void cli_command_set_time(char* command);
+
+extern void cli_command_timer_rep(char* command);
+
+extern void cli_command_cfg_print(char* command);
+
+extern void cli_command_help(char* command);
 
 // --<< display_task.c >>--
 extern void init_Display();
@@ -91,9 +101,15 @@ extern void Display_Clock();
 extern void Display_timer();
 
 // --<< ms_timer_task.c >>--
-// extern void timer_start();
-
 extern void updateElapsedTimeTask(void *pvParameters);
+
+extern void check_timers_time_to_system_time(uint16_t counting_ms);
+
+extern void set_timer_output(uint8_t timer_number);
+
+extern void timer_callback(void* arg);
+
+extern void timer_start_periodic(uint32_t mseconds, int timer_index, gpio_num_t output_pin);
 
 // --<< nvs_task.c >>--
 extern void init_NVS();
@@ -103,19 +119,14 @@ extern void write_cfg_to_NVS();
 extern void read_cfg_from_NVS();
 
 // --<< rtc_task.c >>--
-extern uint8_t dec_to_bcd(uint8_t val);
-
-extern void read_ds3232_task();
-
 extern void set_ds3232_time(uint8_t day, uint8_t hours, uint8_t minutes, uint8_t seconds);
 
-extern void set_ds3232_to_system_time();
+extern void read_ds3232_task(void *pvParameters);
 
-extern void synchronize_system_time_with_ds3232();
+extern void set_system_time_from_ds3232(uint8_t seconds, uint8_t minutes, uint8_t hours, uint8_t day, uint8_t month, uint16_t year);
 
-// --<< switch_timer_task.c >>--
-extern void ms_timer_start(void *pvParameters);
+extern uint8_t dec_to_bcd(uint8_t val);
 
-extern void timer_callback(void* arg);
+extern void read_system_time_to_cfg();
 
 #endif // TASK_H

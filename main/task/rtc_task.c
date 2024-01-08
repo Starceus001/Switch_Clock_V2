@@ -3,101 +3,163 @@
 
 #define RTC_TAG "RTC"
 
-// struct tm synchronized_timeinfo;        // "TEST" look into what this does
-// int timezone_offset_seconds;            // "TEST" look into what this does
+// declare all rtc functions in here
+// function to set the time into the RTC
+void set_ds3232_time(uint8_t day, uint8_t hours, uint8_t minutes, uint8_t seconds) {
+    // feedback
+    ESP_LOGI(RTC_TAG, "Setting DS3232 time");
 
-// // declare all rtc functions in here
-// // helper function to convert decimal to BCD
-// uint8_t dec_to_bcd(uint8_t val) {
-//     return ((val / 10) << 4) | (val % 10);
-// }
+    // create a new i2c command link
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
-// void read_ds3232_task() {
-//     while (1) {
-//         i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    // start i2c communication
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (DS3232_ADDRESS << 1) | I2C_MASTER_WRITE, true);
+    i2c_master_write_byte(cmd, 0x00, true);             // Set register pointer to 0x00 for seconds
+ 
+    // set seconds, minutes, hours, and day
+    i2c_master_write_byte(cmd, dec_to_bcd(seconds), true);
+    i2c_master_write_byte(cmd, dec_to_bcd(minutes), true);
+    i2c_master_write_byte(cmd, dec_to_bcd(hours), true);
+    i2c_master_write_byte(cmd, dec_to_bcd(day), true);
     
-//         // Set register pointer to 0x00 for seconds
-//         i2c_master_start(cmd);
-//         i2c_master_write_byte(cmd, (DS3232_ADDRESS << 1) | I2C_MASTER_WRITE, true);
-//         i2c_master_write_byte(cmd, 0x00, true);
-//         i2c_master_stop(cmd);
+    i2c_master_write_byte(cmd, 0x05, true);             // Set register pointer to 0x05 for month
+    // Hardcoded writes for month and year (e.g., January 2024)
+    i2c_master_write_byte(cmd, dec_to_bcd(0), true);    // Month (January)
+    i2c_master_write_byte(cmd, dec_to_bcd(24), true);   // Century and tens of years
     
-//         // Send read command for seconds, minutes, hours, and day
-//         i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
-//         i2c_cmd_link_delete(cmd);
-    
-//         vTaskDelay(50 / portTICK_PERIOD_MS);  // Wait for DS3232 to respond
-    
-//         cmd = i2c_cmd_link_create();
-//         i2c_master_start(cmd);
-//         i2c_master_write_byte(cmd, (DS3232_ADDRESS << 1) | I2C_MASTER_READ, true);
-    
-//         uint8_t data[4];
-//         i2c_master_read(cmd, data, 4, I2C_MASTER_LAST_NACK);
-//         i2c_master_stop(cmd);
-    
-//         i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
-//         i2c_cmd_link_delete(cmd);
-    
-//         // Process data (data[0] is seconds, data[1] is minutes, data[2] is hours, data[3] is day)
-//         uint8_t seconds = ((data[0] & 0xF0) >> 4) * 10 + (data[0] & 0x0F);
-//         uint8_t minutes = ((data[1] & 0xF0) >> 4) * 10 + (data[1] & 0x0F);
-//         uint8_t hours = ((data[2] & 0xF0) >> 4) * 10 + (data[2] & 0x0F);
-//         uint8_t day = data[3];
-    
-//         printf("Time: %02d:%02d:%02d, Day: %02d\n", hours, minutes, seconds, day);
-    
-//         vTaskDelay(pdMS_TO_TICKS(1000));  // Delay for one second
-//     }
-// }
+    // stop i2c communication
+    i2c_master_stop(cmd);
 
-// void set_ds3232_time(uint8_t day, uint8_t hours, uint8_t minutes, uint8_t seconds) {
-//     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
- 
-//     i2c_master_start(cmd);
-//     i2c_master_write_byte(cmd, (DS3232_ADDRESS << 1) | I2C_MASTER_WRITE, true);
-//     i2c_master_write_byte(cmd, 0x00, true);  // Set register pointer to 0x00 for seconds
- 
-//     // Set seconds, minutes, hours, and day
-//     i2c_master_write_byte(cmd, dec_to_bcd(seconds), true);
-//     i2c_master_write_byte(cmd, dec_to_bcd(minutes), true);
-//     i2c_master_write_byte(cmd, dec_to_bcd(hours), true);
-//     i2c_master_write_byte(cmd, dec_to_bcd(day), true);
- 
-//     i2c_master_stop(cmd);
- 
-//     i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
-//     i2c_cmd_link_delete(cmd);
-// }
+    // execute the i2c command
+    i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
+    i2c_cmd_link_delete(cmd);
+    
+    // feedback
+    ESP_LOGI(RTC_TAG, "DS3232 time set [%d:%d:%d:%d]", day, hours, minutes, seconds);
 
-// void set_ds3232_to_system_time() {
-//     time_t now;
-//     struct tm timeinfo;
- 
-//     // Get current system time
-//     time(&now);
-//     localtime_r(&now, &timeinfo);
- 
-//     // Set DS3232 RTC with system time
-//     set_ds3232_time(timeinfo.tm_wday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-// }
+    // set the rtc time into ESP32 system time
+    set_system_time_from_ds3232(seconds+1, minutes+1, hours+1, day, PRESET_MONTH, PRESET_YEAR);
+}
 
-// // Function to synchronize system time with DS3232 RTC
-// void synchronize_system_time_with_ds3232() {
-//     time_t now;
-//     struct tm timeinfo;
-   
-//     // Read DS3232 RTC time
-//     // read_ds3232_task();
- 
-//     // Get current RTC time
-//     time(&now);
-//     localtime_r(&now, &timeinfo);
- 
-//     // Set system time with RTC time
-//     // struct timeval tv = {
-//     //     .tv_sec = now + (timeinfo.tm_sec - timeinfo.tm_gmtoff),
-//     //     .tv_usec = 0
-//     // };
-//     // settimeofday(&tv, NULL);
-// }
+// function to read the current time from the RTC (looped)
+void read_ds3232_task(void *pvParameters) {
+    // feedback
+    ESP_LOGI(RTC_TAG, "Reading DS3232");
+
+    // infinite loop in task
+    while (1) {
+        // create a new i2c command link
+        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+
+        // start link
+        i2c_master_start(cmd);
+
+        // set register pointer to 0x00 for seconds
+        i2c_master_write_byte(cmd, (DS3232_ADDRESS << 1) | I2C_MASTER_WRITE, true);
+        i2c_master_write_byte(cmd, 0x00, true);
+
+        // stop link
+        i2c_master_stop(cmd);
+
+        // send read command for seconds, minutes, hours, day, month, and year
+        i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
+
+        // delete link (possibly to give RTC time to respond?)
+        i2c_cmd_link_delete(cmd);
+
+        // add delay to give DS3232 time to respond
+        vTaskDelay(50 / portTICK_PERIOD_MS);
+
+        // create a new i2c command link
+        cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, (DS3232_ADDRESS << 1) | I2C_MASTER_READ, true);
+
+        // extend the array size to accommodate day, month, and year
+        uint8_t data[8];
+        i2c_master_read(cmd, data, 7, I2C_MASTER_LAST_NACK);
+
+        // stop link
+        i2c_master_stop(cmd);       // "TEST" not sure why we do this...
+
+        i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);    // "TEST" not sure why we do this...
+        i2c_cmd_link_delete(cmd);   // "TEST" not sure why we do this...
+
+        // process data
+        uint8_t seconds = ((data[0] & 0xF0) >> 4) * 10 + (data[0] & 0x0F);
+        uint8_t minutes = ((data[1] & 0xF0) >> 4) * 10 + (data[1] & 0x0F);
+        uint8_t hours = ((data[2] & 0xF0) >> 4) * 10 + (data[2] & 0x0F);
+        uint8_t day = ((data[4] & 0xF0) >> 4) * 10 + (data[4] & 0x0F);
+        uint8_t month = ((data[5] & 0x10) >> 4) * 10 + (data[5] & 0x0F);
+        uint16_t year = ((data[6] & 0xF0) >> 4) * 10 + (data[6] & 0x0F) + 2000;
+
+        // write rtc time to nvm_cfg struct for clock sync
+        nvm_cfg.rtc.day = day;
+        nvm_cfg.rtc.hour = hours;
+        nvm_cfg.rtc.min = minutes;
+        nvm_cfg.rtc.sec = seconds;
+
+        // set read time from rtc to system time
+        set_system_time_from_ds3232(seconds+1, minutes+1, hours+1, day, month+1, year); // +1 to compensate for using 1 through 12 or 0 through 11
+
+        // wait for 100 sec until rereading rtc (sync purposes)
+        vTaskDelay(pdMS_TO_TICKS(100000));  
+    }
+}
+
+// function to synchronize ESP system time with DS3232 RTC
+void set_system_time_from_ds3232(uint8_t seconds, uint8_t minutes, uint8_t hours, uint8_t day, uint8_t month, uint16_t year) {
+    // feedback
+    ESP_LOGI(RTC_TAG, "Setting system time from DS3232 for synchronisation");
+
+    // define local variables
+    time_t now;             // time now
+    struct tm timeinfo;     // struct to hold the read time
+
+    // convert DS3232 readings to struct tm
+    timeinfo.tm_year = year - 1900;         // Year - 1900
+    timeinfo.tm_mon = month - 1;            // Month (0 - 11)
+    timeinfo.tm_mday = day;                 // Day of the month (1 - 31)
+    timeinfo.tm_hour = hours - 1;           // Hour (0 - 23)
+    timeinfo.tm_min = minutes - 1;          // Minutes (0 - 59)
+    timeinfo.tm_sec = seconds - 1;          // Seconds (0 - 59)
+
+    // set the system time
+    now = mktime(&timeinfo);
+
+    // update the system time using settimeofday
+    struct timeval tv = {
+        .tv_sec = now,
+        .tv_usec = 0
+    };
+    settimeofday(&tv, NULL);
+}
+
+// helper function to convert decimal to BCD
+uint8_t dec_to_bcd(uint8_t val) {
+    // set the tens and ones place to the correct value
+    return ((val / 10) << 4) | (val % 10);
+}
+
+// function to read the system time into cfg
+void read_system_time_to_cfg() {
+    // feedback
+    ESP_LOGI(RTC_TAG, "Reading system time to cfg");
+
+    // define local variables
+    struct timeval tv;
+    struct tm timeinfo;
+
+    // get current (system) time
+    gettimeofday(&tv, NULL);
+
+    // convert to local time
+    localtime_r(&tv.tv_sec, &timeinfo);
+
+    // write local time to cfg
+    nvm_cfg.rtc.day = timeinfo.tm_mday;
+    nvm_cfg.rtc.hour = timeinfo.tm_hour;
+    nvm_cfg.rtc.min = timeinfo.tm_min;
+    nvm_cfg.rtc.sec = timeinfo.tm_sec;
+}

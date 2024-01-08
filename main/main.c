@@ -21,8 +21,7 @@ void app_main(void)
     init_gpio();
 
     // read RTC value into nvm_cfg
-    ESP_LOGI(MAIN_TAG, "Reading RTC");    // move into init function into task folder
-    // read_ds3232_task();      // "TEST" To be implemented
+    xTaskCreate(read_ds3232_task, "ds3232_task", 2048, NULL, 2, NULL);
 
     // init display
     init_Display();      // "TEST" To be tested
@@ -37,11 +36,11 @@ void app_main(void)
     // main code (will repeat indefinitely)
     while (1) {
         // run all functionalities that will continue in sequence until the end
-        // do stuff with buttons flags on every run?
+        // create task to read cli
+        xTaskCreate(read_cli_constant, "read_cli_constant", 2048, NULL, 2, NULL);
 
-        ESP_LOGW("TEST", "looping through main for infinity and beyond!");
-        
-        vTaskDelay(pdMS_TO_TICKS(1000));  // "TEST" Sleep for 1000 milliseconds (1 second)
+        // wait 1 second
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 

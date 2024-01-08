@@ -93,7 +93,6 @@ void print_nvm_cfg() {
     ESP_LOGI(CFG_TAG, "[FLAGS] chosen_timer: %d", nvm_cfg.flags.chosen_timer);
 
     // rtc
-    ESP_LOGI(CFG_TAG, "[RTC] rtc_read_time: %d", nvm_cfg.rtc.rtc_read_time);
     ESP_LOGI(CFG_TAG, "[RTC] day: %d", nvm_cfg.rtc.day);
     ESP_LOGI(CFG_TAG, "[RTC] hour: %d", nvm_cfg.rtc.hour);
     ESP_LOGI(CFG_TAG, "[RTC] min: %d", nvm_cfg.rtc.min);

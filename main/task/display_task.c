@@ -39,7 +39,7 @@ void Display_ssd1306(void *pvParameters) {
     }
     // enter main menu
     else {
-        // get current time
+        // get current (system) time
         gettimeofday(&tv, NULL);
 
         // convert to local time
@@ -134,7 +134,7 @@ void Display_timer(){
     // er wordt in het vervolg menu geen dagen laten zien.
 
     // are we repeating this specific chosen timer?
-    if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1) {
+    if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1 || cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 2) {
         // do this only once when we first enter this timer repeat flag high
         if (nvm_cfg.flags.display_repeattimer_useonce == false) {
             // clear screen (timer screen)
