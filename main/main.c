@@ -25,8 +25,7 @@ void app_main(void)
     // read_ds3232_task();      // "TEST" To be implemented
 
     // init display
-    ESP_LOGI(MAIN_TAG, "Init Display");    // move into init function into task folder
-    // init_display();      // "TEST" To be implemented
+    init_Display();      // "TEST" To be tested
 
     // init ms timer that checks scheduled switchmoments and sets outputs
     ESP_LOGI(MAIN_TAG, "Init ms timer");    // move into init function into task folder
@@ -46,6 +45,7 @@ void app_main(void)
     }
 }
 
+// print start logs
 void startup_logs() {
     // feedback
     ESP_LOGI(MAIN_TAG, "Starting up...");

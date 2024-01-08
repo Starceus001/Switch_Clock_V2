@@ -4,46 +4,43 @@
 #define MS_TIMER_TAG "MS_TIMER"
 
 // declare all ms timer functions in here
-// void init_ms_timer() {
-//     // Create a task on the second core with ms_timer and pass the cfg struct
-//     xTaskCreatePinnedToCore(
-//         ms_timer,                   // Function to run on the second core
-//         "ms_timer_second_core",     // Task name
-//         10000,                      // Stack size (bytes)
-//         NULL,                       // Task parameters (not needed in this example)
-//         1,                          // Task priority
-//         NULL,                       // Task handle (not needed in this example)
-//         1                           // Core to run the task on (1 for the second core)
-//     );
-// }
+// function will run every ms to steer display and ms timer
+void updateElapsedTimeTask(void *pvParameters) {
+    // define function variables
+    uint64_t elapsedTimeMillis = 0;             // global variable to store elapsed time
+    struct timeval lastUpdateTime;
+    gettimeofday(&lastUpdateTime, NULL);
+    static int ms500Executed = 0;               // one time execute variable
+    static uint64_t elapsedTimeCounter = 100;   // declare a counter to keep track of elapsed time
 
-// // ms timer
-// void ms_timer(void *pvParameters) {
-//     // Access the cfg structure passed as a parameter
-//     cfg_t *Cfg = (cfg_t *)pvParameters;
+    // infinite while loop in task
+    while (1) {
+        // 
+        struct timeval currentTime;
+        gettimeofday(&currentTime, NULL);       //Null is voor tijdzone instellen
 
-//     // this needs to be around the function code:
-//     if (xSemaphoreTake(cfgMutex, portMAX_DELAY)) {
-//         // Access and modify cfg from the second core
-
-//         // do stuff safely with the shared data struct so add Roan code here...
-        
-//         // Release the mutex after accessing cfg
-//         xSemaphoreGive(cfgMutex);
-//     }
+        // calculate elapsed time in milliseconds
+        elapsedTimeMillis = (uint64_t)(currentTime.tv_sec - lastUpdateTime.tv_sec) * 1000 +
+                            (uint64_t)(currentTime.tv_usec - lastUpdateTime.tv_usec) / 1000;
 
 
 
-// // OLD:
-//     // const esp_timer_create_args_t timer_args = {
-//     //     .callback = &timer_callback,
-//     //     .arg = NULL,
-//     //     .name = "periodic_timer"
-//     // };
- 
-//     // ESP_ERROR_CHECK(esp_timer_create(&timer_args, &periodic_timer));
- 
-//     // // Start the timer with a period of 1000 microseconds (1ms)
-//     // ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
-// }
- 
+
+        // LOOP TASK
+        // check if 100 milliseconds have passed and update display
+        if (elapsedTimeMillis >= elapsedTimeCounter) {
+            // update display every 100 milliseconds
+            xTaskCreatePinnedToCore(Display_ssd1306, "Display_ssd1306", 4096*2, NULL, 3 ,NULL, 0);
+            // reset the counter only if it's greater than or equal to 100
+            elapsedTimeCounter += 100;
+        }
+
+        // reset vars at the end of each second
+        if (elapsedTimeMillis >= 1000) {
+            // Reset the counter
+            elapsedTimeCounter = 0;
+            lastUpdateTime = currentTime;
+            elapsedTimeMillis = 0;
+        }
+    }
+}

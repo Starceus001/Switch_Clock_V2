@@ -13,16 +13,21 @@
 #include "driver/ledc.h"
 #include <freertos/semphr.h>
 #include "esp_log.h"
-// #include "path/to/ssd1306.h"     // to download
 #include "driver/i2c.h"
 #include <time.h>
 #include "freertos/timers.h"
 #include "esp_timer.h"
 #include "esp_log.h"
 #include <esp_err.h>
-// #include <EEPROM.h>
 #include "nvs_flash.h"
 #include "nvs.h"
+// #include "ssd1306.h"
+// #include "font8x8_basic.h"
+// #include "esp_sntp.h"
+// #include <sys/time.h>
+// #include <esp_task_wdt.h>
+// #include "driver/uart.h"
+// #include <ctype.h>
 
 #include "main.h"
 
@@ -77,10 +82,18 @@ extern void print_nvm_cfg();
 // ...
 
 // --<< display_task.c >>--
-extern void init_display();
+extern void init_Display();
+
+extern void Display_ssd1306(void *pvParameters);
+
+extern void Display_Clock();
+
+extern void Display_timer();
 
 // --<< ms_timer_task.c >>--
-extern void timer_start();
+// extern void timer_start();
+
+extern void updateElapsedTimeTask(void *pvParameters);
 
 // --<< nvs_task.c >>--
 extern void init_NVS();

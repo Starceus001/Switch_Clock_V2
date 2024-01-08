@@ -290,15 +290,20 @@ void TIMER_KNOP_button_pressed() {
         // no clock actions, allowed to do timer stuff
         // first entry on this cycle?
         if (nvm_cfg.flags.timer_flag == 0) {
-            nvm_cfg.flags.clock_flag = 0;           // could be unnecessary but for good measure
+            nvm_cfg.flags.clock_flag = 0;               // could be unnecessary but for good measure
             nvm_cfg.flags.timer_flag = 1;
             nvm_cfg.flags.chosen_timer = 0;
         } else {
-            if (nvm_cfg.flags.chosen_timer < MAX_TIMER_COUNT) {
-                nvm_cfg.flags.chosen_timer++;
-            } else {
-                nvm_cfg.flags.timer_flag = 0;
-                nvm_cfg.flags.chosen_timer = 0;     // could be unnecessary but for good measure
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) {
+                if (nvm_cfg.flags.chosen_timer < MAX_TIMER_COUNT) {
+                    nvm_cfg.flags.chosen_timer++;
+                } else {
+                    nvm_cfg.flags.timer_flag = 0;
+                    nvm_cfg.flags.chosen_timer = 0;     // could be unnecessary but for good measure
+                }
+            }
+            else {
+                ESP_LOGI(BUTTON_TAG, "Timer repeat interval is active, no timer change allowed");
             }
         }
         ESP_LOGI(BUTTON_TAG, "(Cycling timers) Timer [%d] where timer_flag is %d", nvm_cfg.flags.chosen_timer, nvm_cfg.flags.timer_flag);
@@ -321,7 +326,7 @@ void TIMER_ACTIEF_KNOP_button_pressed() {
             } else {
                 cfg.timers[nvm_cfg.flags.chosen_timer].timer_active = 0;
             }
-            ESP_LOGI(BUTTON_TAG, "Timer [%d] timer_active is set to %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].timer_active);
+            ESP_LOGI(BUTTON_TAG, "Timer [%d] timer_active is set to %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].timer_active);      
         }
     }
 
@@ -384,6 +389,8 @@ void CLOCK_KNOP_button_pressed() {
             nvm_cfg.flags.clock_flag = 1;
         } else {
             nvm_cfg.flags.clock_flag = 0;
+            // "TEST" Set cfg rtc time to system time
+            // "TEST" Set cfg time to RTC
         }
         ESP_LOGI(BUTTON_TAG, "Clock button gave %d", nvm_cfg.flags.clock_flag);
     }

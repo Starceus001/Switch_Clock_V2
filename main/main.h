@@ -4,10 +4,27 @@
 // includes (needed inside main.c or main.h)
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/time.h>
+#include "driver/i2c.h"
+
+#include "esp_sntp.h"
+#include <sys/time.h>
+#include <esp_task_wdt.h>
+#include "driver/uart.h"
+#include <ctype.h>
+
+// #include "ssd1306.h"
+// #include "font8x8_basic.h"
+
+#include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\font8x8_basic.h"
+// #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306_i2c.c"
+// #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306_spi.c"
+// #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306.c"
+#include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306.h"
 
 struct cfg_t;
 struct nvm_cfg_t;
- 
+
 // Global defines:
 // Digital input pins
 #define DAG_KNOP GPIO_NUM_25
@@ -31,11 +48,13 @@ struct nvm_cfg_t;
 #define OUTPUT_3 GPIO_NUM_13
 #define OUTPUT_4 GPIO_NUM_2
 
-#define ANALOG_THRESHOLD            200         // 3V3 gives 255 value, 0V gives 0 value, above 200 is considered HIGH
-#define DS3232_ADDRESS              0x68        // 7-bit I2C address
-#define MAX_TIMER_COUNT             3
-#define ANALOG_DEBOUNCE_DELAY_MS    200
-#define DIGITAL_DEBOUNCE_DELAY      500
+#define ANALOG_THRESHOLD                        200         // 3V3 gives 255 value, 0V gives 0 value, above 200 is considered HIGH
+#define DS3232_ADDRESS                          0x68        // 7-bit I2C address
+#define MAX_TIMER_COUNT                         3
+#define ANALOG_DEBOUNCE_DELAY_MS                200
+#define DIGITAL_DEBOUNCE_DELAY                  500
+
+SSD1306_t dev;
 
 // structs (should be called in each file where it is needed)
 typedef struct {
@@ -43,6 +62,13 @@ typedef struct {
     uint8_t timer_flag : 1;
 
     uint8_t chosen_timer;
+
+    // display global flags
+    uint8_t updateElapsedTimeTask_useonce : 1;
+    uint8_t timerset_display : 1;
+    // display timer flags
+    uint8_t display_timer_useonce : 1;
+    uint8_t display_repeattimer_useonce : 1;
 } flags_t;
 
 typedef struct {
@@ -52,6 +78,7 @@ typedef struct {
     uint8_t min;                        // max 60 min
     uint8_t sec;                        // max 60 sec
 } rtc_t;
+
 
 typedef struct {
     // uint16_t time;                   // look into how to bring all time data into one var? or check all individual (day, hour, min, sec, ms)

@@ -10,7 +10,10 @@
                 "${config:idf.espAdfPathWin}/components/**",
                 "${workspaceFolder}/build/config",
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/main"
+                "${workspaceFolder}/main",
+                "${workspaceFolder}/components/components/**",
+                "${workspaceFolder}/components/components/ssd1306",
+                "${workspaceFolder}"
             ],
             "browse": {
                 "path": [
