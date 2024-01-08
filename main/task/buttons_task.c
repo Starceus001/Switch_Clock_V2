@@ -6,6 +6,8 @@
 // Semaphore for synchronizing access to shared resources (e.g., flags)
 SemaphoreHandle_t buttonSemaphore;
 
+TickType_t lastButtonPressTime[NUM_DIGITAL_BUTTONS] = {0};
+
 // define array with all buttons
 gpio_num_t digital_buttons[NUM_DIGITAL_BUTTONS] = {
     DAG_KNOP,
@@ -29,69 +31,78 @@ void handle_button_press(gpio_num_t buttonPin) {
     ESP_LOGI("TEST", "[%d] Button pressed", buttonPin);
 
     // "TEST" use this function when all button reading works to do things with the flags after a flag set (like updating a clock var with the time buttons or updating the display if chosen not to do that in the main loop)
-    // switch (buttonPin) {
-    //     case DAG_KNOP:
-    //         // Handle DAG_KNOP button press
-    //         DAG_KNOP_button_pressed();
-    //         break;
-    //     case TIMER_KNOP:
-    //         // Handle TIMER_KNOP button press
-    //         TIMER_KNOP_button_pressed();
-    //         break;
-    //     case TIMER_ACTIEF_KNOP:
-    //         // Handle TIMER_ACTIEF_KNOP button press
-    //         TIMER_ACTIEF_KNOP_button_pressed();
-    //         break;
-    //     case SCHAKELUITGANG_AANUIT_KNOP:
-    //         // Handle SCHAKELUITGANG_AANUIT_KNOP button press
-    //         SCHAKELUITGANG_AANUIT_KNOP_button_pressed();
-    //         break;
-    //     case HERHAALSCHAKELMOMENT_KNOP:
-    //         // Handle HERHAALSCHAKELMOMENT_KNOP button press
-    //         HERHAALSCHAKELMOMENT_KNOP_button_pressed();
-    //         break;
-    //     case CLOCK_KNOP:
-    //         // Handle CLOCK_KNOP button press
-    //         CLOCK_KNOP_button_pressed();
-    //         break;
-    //     case UUR_KNOP:
-    //         // Handle UUR_KNOP button press
-    //         UUR_KNOP_button_pressed();
-    //         break;
-    //     case MINUUT_KNOP:
-    //         // Handle MINUUT_KNOP button press
-    //         MINUUT_KNOP_button_pressed();
-    //         break;
-    //     case SECONDEN_KNOP:
-    //         // Handle SECONDEN_KNOP button press
-    //         SECONDEN_KNOP_button_pressed();
-    //         break;
-    //     // case MSCENONDE_KNOP:     // "TEST" look into why this button pin has the same value as UUR_KNOP button pin
-    //     //     // Handle MSCENONDE_KNOP button press
-    //     //     MSCENONDE_KNOP_button_pressed();
-    //     //     break;
-    //     default:
-    //         // Handle unknown button press
-    //         ESP_LOGE(BUTTON_TAG, "Unknown button press, doing nothing");
-    //         break;
-    // }
+    switch (buttonPin) {
+        case DAG_KNOP:
+            // Handle DAG_KNOP button press
+            DAG_KNOP_button_pressed();
+            break;
+        case TIMER_KNOP:
+            // Handle TIMER_KNOP button press
+            TIMER_KNOP_button_pressed();
+            break;
+        case TIMER_ACTIEF_KNOP:
+            // Handle TIMER_ACTIEF_KNOP button press
+            TIMER_ACTIEF_KNOP_button_pressed();
+            break;
+        case SCHAKELUITGANG_AANUIT_KNOP:
+            // Handle SCHAKELUITGANG_AANUIT_KNOP button press
+            SCHAKELUITGANG_AANUIT_KNOP_button_pressed();
+            break;
+        case HERHAALSCHAKELMOMENT_KNOP:
+            // Handle HERHAALSCHAKELMOMENT_KNOP button press
+            HERHAALSCHAKELMOMENT_KNOP_button_pressed();
+            break;
+        case CLOCK_KNOP:
+            // Handle CLOCK_KNOP button press
+            CLOCK_KNOP_button_pressed();
+            break;
+        case UUR_KNOP:
+            // Handle UUR_KNOP button press
+            UUR_KNOP_button_pressed();
+            break;
+        // case MINUUT_KNOP:        // "TEST" Not working, giving reboot somehow, look into!!
+        //     // Handle MINUUT_KNOP button press
+        //     MINUUT_KNOP_button_pressed();
+        //     break;
+        case SECONDEN_KNOP:
+            // Handle SECONDEN_KNOP button press
+            SECONDEN_KNOP_button_pressed();
+            break;
+        // case MSCENONDE_KNOP:     // "TEST" look into why this button pin has the same value as UUR_KNOP button pin
+        //     // Handle MSCENONDE_KNOP button press
+        //     MSCENONDE_KNOP_button_pressed();
+        //     break;
+        default:
+            // Handle unknown button press
+            ESP_LOGE(BUTTON_TAG, "Unknown button press, doing nothing");
+            break;
+    }
 }
 
 void button_handle_task(void* arg) {
     gpio_num_t buttonPin = (gpio_num_t) arg;
 
-    // Ensure we have exclusive access to the button handling logic and that the semaphore has 100ms to be available
-    if (xSemaphoreTake(buttonSemaphore, pdMS_TO_TICKS(100)) == pdTRUE) {
-        // Handle the button press
-        handle_button_press(buttonPin);
+    // check if enough time has passed since the last button press
+    uint32_t currentTime = xTaskGetTickCount() * portTICK_PERIOD_MS;
+    uint32_t lastPressTime = lastButtonPressTime[buttonPin];
 
-        // Release the semaphore
-        xSemaphoreGive(buttonSemaphore);
+    if (currentTime - lastPressTime >= DIGITAL_DEBOUNCE_DELAY) {
+        // ensure we have exclusive access to the button handling logic and that the semaphore has 100ms to be available
+        if (xSemaphoreTake(buttonSemaphore, pdMS_TO_TICKS(100)) == pdTRUE) {
+            // handle the button press
+            handle_button_press(buttonPin);
+
+            // update the last press time
+            lastButtonPressTime[buttonPin] = currentTime;
+
+            // release the semaphore
+            xSemaphoreGive(buttonSemaphore);
+        }
     }
 
-    // Task is done, delete itself
+    // task is done, delete itself
     vTaskDelete(NULL);
-}
+} 
 
 void init_gpio() {
     // feedback
@@ -196,7 +207,7 @@ void analog_button_check_task(void* arg) {
             if (adc_value > ANALOG_THRESHOLD) {
                 // check if enough time has passed since the last press
                 TickType_t currentTime = xTaskGetTickCount();
-                if ((currentTime - lastPressTime[i]) > pdMS_TO_TICKS(DEBOUNCE_TIME_MS)) {
+                if ((currentTime - lastPressTime[i]) > pdMS_TO_TICKS(ANALOG_DEBOUNCE_DELAY_MS)) {
                     // is CLOCK_KNOP button pressed? (only valid if last press was at least 1 sec ago)
                     if (i == 0) {
                         if ((currentTime - lastPressTime[0]) > pdMS_TO_TICKS(1000)) {
