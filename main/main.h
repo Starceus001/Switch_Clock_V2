@@ -31,9 +31,10 @@ struct nvm_cfg_t;
 #define OUTPUT_3 GPIO_NUM_13
 #define OUTPUT_4 GPIO_NUM_2
 
-#define ANALOG_THRESHOLD    1500
+#define ANALOG_THRESHOLD    200         // 3V3 gives 255 value, 0V gives 0 value, above 200 is considered HIGH
 #define DS3232_ADDRESS      0x68        // 7-bit I2C address
 #define MAX_TIMER_COUNT     3
+#define DEBOUNCE_DELAY_MS   50
 
 // structs (should be called in each file where it is needed)
 typedef struct {

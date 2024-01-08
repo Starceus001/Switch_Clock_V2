@@ -34,9 +34,13 @@ extern nvm_cfg_t nvm_cfg;
 // --<< buttons_task.c >>--
 extern void init_gpio();
 
+extern void button_handle_task(void* arg);
+
 extern void handle_button_press(gpio_num_t buttonPin);
 
-extern void button_isr_handler(void* arg);
+extern void digital_button_isr_handler(void* arg);
+
+extern void analog_button_check_task(void* arg);
 
 extern void DAG_KNOP_button_pressed();
 
