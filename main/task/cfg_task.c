@@ -12,19 +12,17 @@ void preset_nvmcfg() {
     nvm_cfg.flags.clock_flag = 0;
     nvm_cfg.flags.timer_flag = 0;
     nvm_cfg.flags.chosen_timer = 0;
-
-    // init rtc nvm preset values
-    nvm_cfg.rtc.rtc_read_time = 0;
-    nvm_cfg.rtc.day = 0;
-    nvm_cfg.rtc.hour = 0;
-    nvm_cfg.rtc.min = 0;
-    nvm_cfg.rtc.sec = 0;
-
     // init display nvm preset values
     nvm_cfg.flags.updateElapsedTimeTask_useonce = false;
     nvm_cfg.flags.timerset_display = false;
     nvm_cfg.flags.display_timer_useonce = false;
     nvm_cfg.flags.display_repeattimer_useonce = false;
+
+    // init rtc nvm preset values
+    nvm_cfg.rtc.day = 0;
+    nvm_cfg.rtc.hour = 0;
+    nvm_cfg.rtc.min = 0;
+    nvm_cfg.rtc.sec = 0;
 
     // feedback
     ESP_LOGI(CFG_TAG, "Preset nvm_cfg done");

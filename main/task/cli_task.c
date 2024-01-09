@@ -8,7 +8,7 @@
 void read_cli_constant() {
     // define local variables
     size_t available_bytes = 0;
-
+ 
     // get the length of the buffered data on the uart for future reading
     uart_get_buffered_data_len(UART_NUM, &available_bytes);
     
@@ -26,7 +26,7 @@ void read_cli_constant() {
             data[buf] = 0;
             
             // process the received command
-            handle_command((const char*)data);
+            handle_command((char*)data);
         }
         // Free allocated memory
         free(data);
@@ -36,7 +36,7 @@ void read_cli_constant() {
 }
 
 // function to handle uart commands
-void handle_command(const char* command) {
+void handle_command(char* command) {
     // define local variables
     char trimmed_command[64];   // Adjust the size as needed
     // Copy the command to a local buffer and trim whitespace
@@ -54,7 +54,7 @@ void handle_command(const char* command) {
         cli_command_timer_rep(trimmed_command);
         
     // check if the command is "cfg_print"
-    } else if (strcmp(trimmed_command, "cfg_print", 10) == 0) {
+    } else if (strncmp(trimmed_command, "cfg_print", 10) == 0) {
         // call function to run command code
         cli_command_cfg_print(trimmed_command);
 
@@ -74,61 +74,67 @@ void handle_command(const char* command) {
 }
 
 // command for clock time set
-void cli_command_set_time(const char* command) {
+void cli_command_set_time(char* command) {
+    // define local variables
+    char trimmed_command[64];   // Adjust the size as needed
+
     // feedback
-        ESP_LOGI(CLI_TAG, "Executing Set_time command");
+    ESP_LOGI(CLI_TAG, "Executing Set_time command");
 
-        // skip "Set_time" part to get to data
-        const char* time_str = trimmed_command + 8;
+    // skip "Set_time" part to get to data
+    const char* time_str = trimmed_command + 8;
 
-        // parse the values using sscanf
-        uint8_t day, hours, minutes, seconds;
-        int result = sscanf(time_str, "%hhu,%hhu,%hhu,%hhu", &day, &hours, &minutes, &seconds);
+    // parse the values using sscanf
+    uint8_t day, hours, minutes, seconds;
+    int result = sscanf(time_str, "%hhu,%hhu,%hhu,%hhu", &day, &hours, &minutes, &seconds);
 
-        // Check if we have parsed all 4 values
-        if (result == 4) {
-            // call the function to set the time
-            set_ds3232_time(day, hours, minutes, seconds);
+    // Check if we have parsed all 4 values
+    if (result == 4) {
+        // call the function to set the time
+        set_ds3232_time(day, hours, minutes, seconds);
 
-            // set the time in nvm_cfg
-            nvm_cfg.rtc.day = day;
-            nvm_cfg.rtc.hour = hours;
-            nvm_cfg.rtc.min = minutes;
-            nvm_cfg.rtc.sec = seconds;
-            
-            // feedback
-            ESP_LOGI(CLI_TAG, "Done executing Set_time command");
-        } else {
-            ESP_LOGW(CLI_TAG, "Invalid Set_time command format");
-        }
+        // set the time in nvm_cfg
+        nvm_cfg.rtc.day = day;
+        nvm_cfg.rtc.hour = hours;
+        nvm_cfg.rtc.min = minutes;
+        nvm_cfg.rtc.sec = seconds;
+        
+        // feedback
+        ESP_LOGI(CLI_TAG, "Done executing Set_time command");
+    } else {
+        ESP_LOGW(CLI_TAG, "Invalid Set_time command format");
+    }
 }
 
 // command for timer repeat
-cli_command_timer_rep(const char* command) {
+void cli_command_timer_rep(char* command) {
+    // define local variables
+    char trimmed_command[64];   // Adjust the size as needed
+
     // feedback
-        ESP_LOGI(CLI_TAG, "Executing Timer_Start_periodic command");
+    ESP_LOGI(CLI_TAG, "Executing Timer_Start_periodic command");
 
-        // skip "timer_rep" part to get to data
-        const char* time_str = trimmed_command + 10;
+    // skip "timer_rep" part to get to data
+    const char* time_str = trimmed_command + 10;
 
-        // parse the argument using sscanf
-        uint16_t milliseconds;
-        int result = sscanf(time_str, "%hu", &milliseconds);
+    // parse the argument using sscanf
+    uint16_t milliseconds;
+    int result = sscanf(time_str, "%hu", &milliseconds);
 
-        // check if we have parsed the value
-        if (result == 1) {
-            // call the function to start periodic timer
-            // Timer_Start_periodic(milliseconds);                  // "TEST" to be implemented
+    // check if we have parsed the value
+    if (result == 1) {
+        // call the function to start periodic timer
+        // timer_start_periodic(milliseconds);                  // "TEST" to be implemented, if going to set one timer specific, need to sent what timer along. Else create new function to repeat all 4 timers with set ms
 
-            // feedback
-            ESP_LOGI(CLI_TAG, "Done executing Timer_Start_periodic with %hu milliseconds", milliseconds);
-        } else {
-            ESP_LOGW(CLI_TAG, "Invalid Timer_Start_periodic command format");
-        }
+        // feedback
+        ESP_LOGI(CLI_TAG, "Done executing Timer_Start_periodic with %hu milliseconds", milliseconds);
+    } else {
+        ESP_LOGW(CLI_TAG, "Invalid Timer_Start_periodic command format");
+    }
 }
 
 // command for cfg printing
-cli_command_cfg_print(const char* command) {
+void cli_command_cfg_print(char* command) {
     // feedback
     ESP_LOGI(CLI_TAG, "Executing cfg_print command");
 
@@ -140,7 +146,7 @@ cli_command_cfg_print(const char* command) {
 }
 
 // command for help
-cli_command_help(const char* command) {
+void cli_command_help(char* command) {
     // print list of available commands
     ESP_LOGI(CLI_TAG, "---------------------------------------------------------------------------------------------------------");
     ESP_LOGI(CLI_TAG, "| Available commands:                                                                                    |");

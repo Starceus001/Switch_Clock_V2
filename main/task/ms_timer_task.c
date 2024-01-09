@@ -8,20 +8,15 @@
 void updateElapsedTimeTask(void *pvParameters) {
     // define function variables
     uint64_t elapsedTimeMillis = 0;             // global variable to store elapsed time
-    struct timeval lastUpdateTime;
-    gettimeofday(&lastUpdateTime, NULL);
-    static int ms500Executed = 0;               // one time execute variable
+    struct timeval lastUpdateTime;              // declare a variable to store the last update time
+    gettimeofday(&lastUpdateTime, NULL);        // get the current time and store it in the lastUpdateTime variable when first running this (only once)
     static uint64_t elapsedTimeCounter = 100;   // declare a counter to keep track of elapsed time
 
     // infinite while loop in task
     while (1) {
-        // 
+        // "TEST" what does this do??
         struct timeval currentTime;
-        gettimeofday(&currentTime, NULL);       //Null is voor tijdzone instellen
-
-        // check all timers against system time to set outputs
-        // ...
-
+        gettimeofday(&currentTime, NULL);
 
         // calculate elapsed time in milliseconds
         elapsedTimeMillis = (uint64_t)(currentTime.tv_sec - lastUpdateTime.tv_sec) * 1000 +
@@ -31,7 +26,7 @@ void updateElapsedTimeTask(void *pvParameters) {
         check_timers_time_to_system_time(elapsedTimeMillis);
 
         // LOOP TASK
-        // check if 100 milliseconds have passed and update display
+        // check if 100 milliseconds have passed to update display
         if (elapsedTimeMillis >= elapsedTimeCounter) {
             // update display every 100 milliseconds
             xTaskCreatePinnedToCore(Display_ssd1306, "Display_ssd1306", 4096*2, NULL, 3 ,NULL, 0);
@@ -55,7 +50,7 @@ void updateElapsedTimeTask(void *pvParameters) {
 // check if timer moment has arrived
 void check_timers_time_to_system_time(uint16_t counting_ms) {
     // loop over each timer
-    for (uint8_t i; i <= MAX_TIMER_COUNT; i++) {
+    for (uint8_t i = 0; i <= MAX_TIMER_COUNT; i++) {
         // check if timer moment is here
         if (cfg.timers[i].set_day == nvm_cfg.rtc.day &&
             cfg.timers[i].set_hour == nvm_cfg.rtc.hour &&
@@ -67,7 +62,7 @@ void check_timers_time_to_system_time(uint16_t counting_ms) {
                     set_timer_output(i);
 
                     // call function to set repeat timer
-                    timer_start_periodic(cfg.timers[i].interval_in_ms, i, output_pins[i]);
+                    timer_start_periodic(cfg.timers[i].interval_in_ms, i);
 
                     // set flag to true
                     cfg.timers[i].setting_timer_output_useonce = true;
@@ -83,8 +78,8 @@ void check_timers_time_to_system_time(uint16_t counting_ms) {
 // set timer output when timer moment has arrived
 void set_timer_output(uint8_t timer_number) {
     // check if timer is active
-    if (cfg.timers[timer_number].enabled == true) {
-        gpio_set_level(output_pins[timer_number], cfg.timer[timer_number].set_value);
+    if (cfg.timers[timer_number].timer_active == true) {
+        gpio_set_level(output_pins[timer_number], cfg.timers[timer_number].set_value);
     }
 }
 
@@ -113,7 +108,7 @@ void timer_callback(void* arg) {
 }
 
 // function to start a periodic timer
-void timer_start_periodic(uint32_t mseconds, int timer_index, gpio_num_t output_pin) {  // msecond is full interval in ms
+void timer_start_periodic(uint32_t mseconds, int timer_index) {  // msecond is full interval in ms
     // create timer arguments
     const esp_timer_create_args_t timer_args = {
         .callback = &timer_callback,
@@ -122,7 +117,7 @@ void timer_start_periodic(uint32_t mseconds, int timer_index, gpio_num_t output_
     };
 
     // set the output pin associated with the timer
-    output_pins[timer_index] = output_pin;
+    // output_pin = output_pins[timer_index];       // "TEST" why do we have this? we are not using it??
 
     // create repeat timer
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &periodic_timers[timer_index]));

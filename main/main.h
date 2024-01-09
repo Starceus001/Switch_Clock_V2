@@ -4,23 +4,23 @@
 // includes (needed inside main.c or main.h)
 #include <stdint.h>
 #include <stdio.h>
+#include "esp_timer.h"
 #include <sys/time.h>
 #include "driver/i2c.h"
-
 #include "esp_sntp.h"
-#include <sys/time.h>
 #include <esp_task_wdt.h>
 #include "driver/uart.h"
-#include <ctype.h>
 
 // #include "ssd1306.h"
 // #include "font8x8_basic.h"
 
-#include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\font8x8_basic.h"
+// "TEST" trying to include all ssd1306 folder files
 // #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306_i2c.c"
 // #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306_spi.c"
 // #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306.c"
-#include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306.h"
+
+#include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306.h"       // "TEST" look into
+#include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\font8x8_basic.h" // "TEST" look into
 
 struct cfg_t;
 struct nvm_cfg_t;
@@ -54,6 +54,13 @@ struct nvm_cfg_t;
 #define ANALOG_DEBOUNCE_DELAY_MS                200
 #define DIGITAL_DEBOUNCE_DELAY                  500
 
+// cli defines
+#define UART_NUM UART_NUM_1
+#define TX_PIN  GPIO_NUM_1
+#define RX_PIN  GPIO_NUM_3
+#define BUF_SIZE (1024)
+
+// preset month and year, we are not doing this dynamic
 #define PRESET_MONTH                            1          // 1 through 12
 #define PRESET_YEAR                             2024
 
@@ -61,7 +68,7 @@ SSD1306_t dev;
 
 // Global array's
 // outputs
-const gpio_num_t output_pins[3] = {OUTPUT_1, OUTPUT_2, OUTPUT_3, OUTPUT_4};
+const gpio_num_t output_pins[4] = {OUTPUT_1, OUTPUT_2, OUTPUT_3, OUTPUT_4};
 
 // periodic timers (NOT actual cfg timers!)
 esp_timer_handle_t periodic_timers[MAX_TIMER_COUNT];

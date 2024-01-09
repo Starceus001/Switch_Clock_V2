@@ -21,13 +21,14 @@
 #include <esp_err.h>
 #include "nvs_flash.h"
 #include "nvs.h"
+#include <sys/time.h>
+#include "driver/i2c.h"
+#include "esp_sntp.h"
+#include <esp_task_wdt.h>
+#include "driver/uart.h"
+#include <ctype.h>
 // #include "ssd1306.h"
 // #include "font8x8_basic.h"
-// #include "esp_sntp.h"
-// #include <sys/time.h>
-// #include <esp_task_wdt.h>
-// #include "driver/uart.h"
-// #include <ctype.h>
 
 #include "main.h"
 
@@ -81,7 +82,7 @@ extern void print_nvm_cfg();
 // --<< cli_task.c >>--
 extern void read_cli_constant();
 
-extern void handle_command(const char* command);
+extern void handle_command(char* command);
 
 extern void cli_command_set_time(char* command);
 
@@ -109,7 +110,7 @@ extern void set_timer_output(uint8_t timer_number);
 
 extern void timer_callback(void* arg);
 
-extern void timer_start_periodic(uint32_t mseconds, int timer_index, gpio_num_t output_pin);
+extern void timer_start_periodic(uint32_t mseconds, int timer_index);
 
 // --<< nvs_task.c >>--
 extern void init_NVS();

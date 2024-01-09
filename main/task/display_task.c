@@ -26,7 +26,6 @@ void init_Display() {
 
 // main display function
 void Display_ssd1306(void *pvParameters) {
-    static bool once = false;
     struct timeval tv;
     struct tm timeinfo;
     // enter clock menu
