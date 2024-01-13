@@ -3,6 +3,14 @@
 
 #define MS_TIMER_TAG "MS_TIMER"
 
+// outputs
+const gpio_num_t output_pins[4] = {OUTPUT_1, OUTPUT_2, OUTPUT_3, OUTPUT_4};
+
+// periodic timers (NOT actual cfg timers!)
+esp_timer_handle_t periodic_timers[MAX_TIMER_COUNT];
+
+esp_timer_handle_t periodic_timers_all;
+
 // declare all ms timer functions in here
 // function will run every ms to steer display and ms timer
 void updateElapsedTimeTask(void *pvParameters) {
@@ -14,7 +22,6 @@ void updateElapsedTimeTask(void *pvParameters) {
 
     // infinite while loop in task
     while (1) {
-        // "TEST" what does this do??
         struct timeval currentTime;
         gettimeofday(&currentTime, NULL);
 
@@ -41,8 +48,10 @@ void updateElapsedTimeTask(void *pvParameters) {
             lastUpdateTime = currentTime;
             elapsedTimeMillis = 0;
 
-            // set system time to cfg
-            read_system_time_to_cfg();
+            if (nvm_cfg.flags.clock_flag == false) {
+                // set system time to cfg
+                read_system_time_to_cfg();
+            }
         }
     }
 }
@@ -57,12 +66,12 @@ void check_timers_time_to_system_time(uint16_t counting_ms) {
             cfg.timers[i].set_min == nvm_cfg.rtc.min &&
             cfg.timers[i].set_sec == nvm_cfg.rtc.sec) {
             if (cfg.timers[i].set_ms == counting_ms) {
-                if ((cfg.timers[i].repeat_timer == 1 || cfg.timers[i].repeat_timer == 2) && (cfg.timers[i].setting_timer_output_useonce == false)) {
+                if ((cfg.timers[i].repeat_timer != 0) && (cfg.timers[i].setting_timer_output_useonce == false)) {
                     // set timer output regularly only once, next cycle is repeat
                     set_timer_output(i);
 
                     // call function to set repeat timer
-                    timer_start_periodic(cfg.timers[i].interval_in_ms, i);
+                    timer_start_periodic(i);
 
                     // set flag to true
                     cfg.timers[i].setting_timer_output_useonce = true;
@@ -79,6 +88,7 @@ void check_timers_time_to_system_time(uint16_t counting_ms) {
 void set_timer_output(uint8_t timer_number) {
     // check if timer is active
     if (cfg.timers[timer_number].timer_active == true) {
+        ESP_LOGE("TEST", "[%d] timer output set to [%d]", timer_number, cfg.timers[timer_number].set_value);
         gpio_set_level(output_pins[timer_number], cfg.timers[timer_number].set_value);
     }
 }
@@ -108,7 +118,7 @@ void timer_callback(void* arg) {
 }
 
 // function to start a periodic timer
-void timer_start_periodic(uint32_t mseconds, int timer_index) {  // msecond is full interval in ms
+void timer_start_periodic(int timer_index) {
     // create timer arguments
     const esp_timer_create_args_t timer_args = {
         .callback = &timer_callback,
@@ -116,12 +126,53 @@ void timer_start_periodic(uint32_t mseconds, int timer_index) {  // msecond is f
         .name = "periodic_timer"
     };
 
-    // set the output pin associated with the timer
-    // output_pin = output_pins[timer_index];       // "TEST" why do we have this? we are not using it??
-
     // create repeat timer
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &periodic_timers[timer_index]));
 
     // start the repeat timer
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timers[timer_index], mseconds));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timers[timer_index], cfg.timers[timer_index].interval_in_ms));
+}
+
+// callback to set all timer outputs (repeat all functionality)
+void timer_all_callback() {
+    // check if the repeat_timer is set
+    if (cfg.timers[0].repeat_timer == 1) {
+        // stop all timers when setting first timer to no repeat
+        esp_timer_stop(periodic_timers_all);
+
+        // feedback
+        ESP_LOGI(MS_TIMER_TAG, "Timer [0] set to no repeat, turning off repeat all functionality");
+        
+        // exit the callback
+        return;
+    }
+    
+    // toggle all outputs
+    gpio_set_level(output_pins[0], !gpio_get_level(output_pins[0]));
+    gpio_set_level(output_pins[1], !gpio_get_level(output_pins[1]));
+    gpio_set_level(output_pins[2], !gpio_get_level(output_pins[2]));
+    gpio_set_level(output_pins[3], !gpio_get_level(output_pins[3]));
+}
+
+// function to start repeat for all timers (repeat all functionality)
+void timer_start_periodic_all(uint16_t repeat_all_milliseconds) {
+    // feedback
+    ESP_LOGI(MS_TIMER_TAG, "Starting repeat all timers functionality");
+
+    // create timer arguments
+    const esp_timer_create_args_t timer_args = {
+        .callback = &timer_all_callback,
+        .name = "periodic_timer_all"
+    };
+
+    // set all repeat timer flags to 0, timers cannot repeat when using this function!
+    for (uint8_t i = 0; i <= MAX_TIMER_COUNT; i++) {
+        cfg.timers[i].repeat_timer = 0;
+    }
+
+    // create repeat timer
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &periodic_timers_all));
+
+    // start the repeat timer
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timers_all, repeat_all_milliseconds));
 }

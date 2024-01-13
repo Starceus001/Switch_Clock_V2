@@ -4,23 +4,9 @@
 // includes (needed inside main.c or main.h)
 #include <stdint.h>
 #include <stdio.h>
-#include "esp_timer.h"
-#include <sys/time.h>
-#include "driver/i2c.h"
-#include "esp_sntp.h"
-#include <esp_task_wdt.h>
-#include "driver/uart.h"
 
-// #include "ssd1306.h"
-// #include "font8x8_basic.h"
-
-// "TEST" trying to include all ssd1306 folder files
-// #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306_i2c.c"
-// #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306_spi.c"
-// #include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306.c"
-
-#include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\ssd1306.h"       // "TEST" look into
-#include "D:\Github_Repositories\Switch_Clock_V2\components\components\ssd1306\font8x8_basic.h" // "TEST" look into
+#include "ssd1306.h"
+#include "font8x8_basic.h"
 
 struct cfg_t;
 struct nvm_cfg_t;
@@ -51,7 +37,7 @@ struct nvm_cfg_t;
 #define ANALOG_THRESHOLD                        200         // 3V3 gives 255 value, 0V gives 0 value, above 200 is considered HIGH
 #define DS3232_ADDRESS                          0x68        // 7-bit I2C address
 #define MAX_TIMER_COUNT                         3
-#define ANALOG_DEBOUNCE_DELAY_MS                200
+#define ANALOG_DEBOUNCE_DELAY_MS                500
 #define DIGITAL_DEBOUNCE_DELAY                  500
 
 // cli defines
@@ -63,15 +49,6 @@ struct nvm_cfg_t;
 // preset month and year, we are not doing this dynamic
 #define PRESET_MONTH                            1          // 1 through 12
 #define PRESET_YEAR                             2024
-
-SSD1306_t dev;
-
-// Global array's
-// outputs
-const gpio_num_t output_pins[4] = {OUTPUT_1, OUTPUT_2, OUTPUT_3, OUTPUT_4};
-
-// periodic timers (NOT actual cfg timers!)
-esp_timer_handle_t periodic_timers[MAX_TIMER_COUNT];
 
 // structs (should be called in each file where it is needed)
 typedef struct {
@@ -85,7 +62,11 @@ typedef struct {
     uint8_t timerset_display : 1;
     // display timer flags
     uint8_t display_timer_useonce : 1;
-    uint8_t display_repeattimer_useonce : 1;
+    uint8_t display_repeattimer_1_3_useonce : 1;
+    uint8_t display_repeattimer_2_0_useonce : 1;
+    uint8_t display_repeattimer_leaving_lasttime : 1;
+    // display home menu flags
+    uint8_t display_clr_scrn_after_clockortimer : 1;
 } flags_t;
 
 typedef struct {

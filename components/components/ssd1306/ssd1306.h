@@ -127,7 +127,6 @@ void ssd1306_bitmaps(SSD1306_t * dev, int xpos, int ypos, uint8_t * bitmap, int 
 void _ssd1306_pixel(SSD1306_t * dev, int xpos, int ypos, bool invert);
 void _ssd1306_line(SSD1306_t * dev, int x1, int y1, int x2, int y2,  bool invert);
 void ssd1306_invert(uint8_t *buf, size_t blen);
-void ssd1306_invert_segments(SSD1306_t *dev, int page, int start_byte, int end_byte);// give the function the char pos you want to invert
 void ssd1306_flip(uint8_t *buf, size_t blen);
 uint8_t ssd1306_copy_bit(uint8_t src, int srcBits, uint8_t dst, int dstBits);
 uint8_t ssd1306_rotate_byte(uint8_t ch1);
@@ -149,7 +148,7 @@ void spi_init(SSD1306_t * dev, int width, int height);
 void spi_display_image(SSD1306_t * dev, int page, int seg, uint8_t * images, int width);
 void spi_contrast(SSD1306_t * dev, int contrast);
 void spi_hardware_scroll(SSD1306_t * dev, ssd1306_scroll_type_t scroll);
-
+void ssd1306_invert_segments(SSD1306_t *dev, int page, int start_byte, int end_byte);// give the function the char pos you want to invert
 
 #ifdef __cplusplus
 }

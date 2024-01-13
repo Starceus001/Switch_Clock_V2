@@ -21,9 +21,9 @@ void set_ds3232_time(uint8_t day, uint8_t hours, uint8_t minutes, uint8_t second
     i2c_master_write_byte(cmd, dec_to_bcd(seconds), true);
     i2c_master_write_byte(cmd, dec_to_bcd(minutes), true);
     i2c_master_write_byte(cmd, dec_to_bcd(hours), true);
+    i2c_master_write_byte(cmd, 0x04, true);
     i2c_master_write_byte(cmd, dec_to_bcd(day), true);
     
-    i2c_master_write_byte(cmd, 0x05, true);             // Set register pointer to 0x05 for month
     // Hardcoded writes for month and year (e.g., January 2024)
     i2c_master_write_byte(cmd, dec_to_bcd(0), true);    // Month (January)
     i2c_master_write_byte(cmd, dec_to_bcd(24), true);   // Century and tens of years
@@ -81,10 +81,10 @@ void read_ds3232_task(void *pvParameters) {
         i2c_master_read(cmd, data, 7, I2C_MASTER_LAST_NACK);
 
         // stop link
-        i2c_master_stop(cmd);       // "TEST" not sure why we do this...
+        i2c_master_stop(cmd);
 
-        i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);    // "TEST" not sure why we do this...
-        i2c_cmd_link_delete(cmd);   // "TEST" not sure why we do this...
+        i2c_master_cmd_begin(I2C_NUM_0, cmd, 1000 / portTICK_PERIOD_MS);
+        i2c_cmd_link_delete(cmd);
 
         // process data
         uint8_t seconds = ((data[0] & 0xF0) >> 4) * 10 + (data[0] & 0x0F);
@@ -94,14 +94,17 @@ void read_ds3232_task(void *pvParameters) {
         uint8_t month = ((data[5] & 0x10) >> 4) * 10 + (data[5] & 0x0F);
         uint16_t year = ((data[6] & 0xF0) >> 4) * 10 + (data[6] & 0x0F) + 2000;
 
-        // write rtc time to nvm_cfg struct for clock sync
-        nvm_cfg.rtc.day = day;
-        nvm_cfg.rtc.hour = hours;
-        nvm_cfg.rtc.min = minutes;
-        nvm_cfg.rtc.sec = seconds;
+        // if in clock menu, do not sync time as it will read time from RTC and set into cfg, effectively overwriting what you are doing in clock menu
+        if (nvm_cfg.flags.clock_flag == false) {
+            // write rtc time to nvm_cfg struct for clock sync
+            nvm_cfg.rtc.day = day;
+            nvm_cfg.rtc.hour = hours;
+            nvm_cfg.rtc.min = minutes;
+            nvm_cfg.rtc.sec = seconds;
 
-        // set read time from rtc to system time
-        set_system_time_from_ds3232(seconds+1, minutes+1, hours+1, day, month+1, year); // +1 to compensate for using 1 through 12 or 0 through 11
+            // set read time from rtc to system time
+            set_system_time_from_ds3232(seconds+1, minutes+1, hours+1, day, month+1, year); // +1 to compensate for using 1 through 12 or 0 through 11
+        }
 
         // wait for 100 sec until rereading rtc (sync purposes)
         vTaskDelay(pdMS_TO_TICKS(100000));  
@@ -144,9 +147,6 @@ uint8_t dec_to_bcd(uint8_t val) {
 
 // function to read the system time into cfg
 void read_system_time_to_cfg() {
-    // feedback
-    ESP_LOGI(RTC_TAG, "Reading system time to cfg");
-
     // define local variables
     struct timeval tv;
     struct tm timeinfo;

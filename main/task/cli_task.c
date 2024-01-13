@@ -3,55 +3,95 @@
 
 #define CLI_TAG "CLI"
 
-// declare all cli functions in here
 // read the cli constantly in main while loop
 void read_cli_constant() {
-    // define local variables
-    size_t available_bytes = 0;
- 
-    // get the length of the buffered data on the uart for future reading
-    uart_get_buffered_data_len(UART_NUM, &available_bytes);
-    
-    // check if there is data available (if we don't, big errors...)
-    if (available_bytes > 0) {
-        // allocate memory for the data
-        uint8_t* data = (uint8_t*) malloc(BUF_SIZE);
+    // define buffer with set size only on first run
+    char buf[BUF_SIZE];
 
-        // read the data from the uart
-        int buf = uart_read_bytes(UART_NUM, data, BUF_SIZE, 1000 / portTICK_PERIOD_MS);
-        
-        // check if we have received data (is double but if we don't check soon, we can get into problems)
-        if (buf > 0) {
-            // null-terminate the received data
-            data[buf] = 0;
-            
-            // process the received command
-            handle_command((char*)data);
+    // clear buffer to start with a buffer full of 0's
+    memset(buf, 0, sizeof(buf));
+
+    // flag to indicate if the buffer is full
+    int buffer_full = 0;
+
+    // loop to constantly read UART buffer into my buffer
+    while(1) {
+        // use scanf to read data from UART into holder
+        char holder[BUF_SIZE];  // declare holder variable
+        if (scanf("%s", holder) == 1) {
+            // check if the buffer is full
+            if (strlen(buf) + strlen(holder) < BUF_SIZE - 1) {
+                strcat(buf, holder);  // append holder to the end of buf
+            } else {
+                // handle buffer full error
+                ESP_LOGE(CLI_TAG, "Buffer is full, emptying buffer");
+                memset(buf, 0, sizeof(buf));  // optionally clear the buffer or take other actions
+                buffer_full = 1;  // set the flag to indicate buffer full
+            }
+
+            // check if a newline is found in the entire buffer
+            if (!buffer_full) {
+                char *newline_pos = strchr(buf, ';');
+                if (newline_pos != NULL) {
+                    *newline_pos = '\0';      // null-terminate at the newline position
+                    handle_command(buf);      // process the command
+
+                    // move the remaining data to the front of the buffer
+                    memmove(buf, newline_pos + 1, strlen(newline_pos + 1) + 1);
+                }
+            }
+
+            // reset the buffer full flag
+            buffer_full = 0;
         }
-        // Free allocated memory
-        free(data);
+
+        // wait one second until reading the buffer again
+        vTaskDelay(500 / portTICK_PERIOD_MS);
     }
-    // delete task
-    vTaskDelete(NULL);
 }
 
 // function to handle uart commands
 void handle_command(char* command) {
+    // feedback
+    ESP_LOGI(CLI_TAG, "Received command: %s", command);
+
     // define local variables
     char trimmed_command[64];   // Adjust the size as needed
-    // Copy the command to a local buffer and trim whitespace
+    char given_command[32];
+    // Copy the command to a local buffer and trim finalizer (;)
     strncpy(trimmed_command, command, sizeof(trimmed_command) - 1);
     trim_whitespace(trimmed_command);
 
-    // Check if the command is "set_time"
-    if (strncmp(trimmed_command, "set_time", 8) == 0) {
+    // get command from leftover (without ;) up to (-) to get command name
+    // get the first (-) position (if any)
+    char *hyphen_position = strchr(trimmed_command, '-');
+
+    // check if hyphen was found
+    if (hyphen_position != NULL) {
+        // calculate the length up to the hyphen
+        size_t length_up_to_hyphen = hyphen_position - trimmed_command;
+
+        // copy the substring up to the hyphen to the command variable
+        strncpy(given_command, trimmed_command, length_up_to_hyphen);
+        given_command[length_up_to_hyphen] = '\0';  // Null-terminate the string
+    } else {
+        // no (-) was found, this could be a normal command so this is not needed
+    }
+
+    // check if the command is "set_time"
+    if (strncmp(given_command, "set_time", 9) == 0) {
         // call function to run command code
         cli_command_set_time(trimmed_command);
 
-    // check if the command is "timer_rep"
-    } else if (strncmp(trimmed_command, "timer_rep", 10) == 0) {
+    // check if the command is "timer_set"
+    } else if (strncmp(given_command, "timer_set", 10) == 0) {
         // call function to run command code
-        cli_command_timer_rep(trimmed_command);
+        cli_command_timer_set(trimmed_command);
+
+    // check if the command is "timers_all_rep"
+    } else if (strncmp(given_command, "timers_all_rep", 15) == 0) {
+        // call function to run command code
+        cli_command_timers_all_rep(trimmed_command);
         
     // check if the command is "cfg_print"
     } else if (strncmp(trimmed_command, "cfg_print", 10) == 0) {
@@ -59,12 +99,9 @@ void handle_command(char* command) {
         cli_command_cfg_print(trimmed_command);
 
     }
-    // "TEST" to continue adding all other functions over cli
-    /*
-    - set timers individually with all settings (seperate commands?)
-    */ 
+    
     // check if the command is "help"
-    else if (strcmp(trimmed_command, "help") == 0) {
+    else if (strncmp(trimmed_command, "help", 5) == 0) {
         // call function to run command code
         cli_command_help(trimmed_command);
 
@@ -75,14 +112,11 @@ void handle_command(char* command) {
 
 // command for clock time set
 void cli_command_set_time(char* command) {
-    // define local variables
-    char trimmed_command[64];   // Adjust the size as needed
-
     // feedback
     ESP_LOGI(CLI_TAG, "Executing Set_time command");
 
     // skip "Set_time" part to get to data
-    const char* time_str = trimmed_command + 8;
+    const char* time_str = command + 8;
 
     // parse the values using sscanf
     uint8_t day, hours, minutes, seconds;
@@ -90,14 +124,28 @@ void cli_command_set_time(char* command) {
 
     // Check if we have parsed all 4 values
     if (result == 4) {
-        // call the function to set the time
-        set_ds3232_time(day, hours, minutes, seconds);
+        // variable to determine if any data reading was invalid
+        uint8_t ret = 0;
 
         // set the time in nvm_cfg
-        nvm_cfg.rtc.day = day;
-        nvm_cfg.rtc.hour = hours;
-        nvm_cfg.rtc.min = minutes;
-        nvm_cfg.rtc.sec = seconds;
+        if (day >= 1 && day <= 7) nvm_cfg.rtc.day = day;
+        else ret = -1;
+        if (hours >= 0 && hours <= 23) nvm_cfg.rtc.hour = hours;
+        else ret = -1;
+        if (minutes >= 0 && minutes <= 59) nvm_cfg.rtc.min = minutes;
+        else ret = -1;
+        if (seconds >= 0 && seconds <= 59) nvm_cfg.rtc.sec = seconds;
+        else ret = -1;
+
+        if (ret == -1) {
+            // error log and leave function, data invalid
+            ESP_LOGW(CLI_TAG, "Invalid Set_time command format");
+
+            return;
+        }
+
+        // set the time in ds3232
+        set_ds3232_time(day, hours, minutes, seconds);
         
         // feedback
         ESP_LOGI(CLI_TAG, "Done executing Set_time command");
@@ -106,30 +154,104 @@ void cli_command_set_time(char* command) {
     }
 }
 
-// command for timer repeat
-void cli_command_timer_rep(char* command) {
-    // define local variables
-    char trimmed_command[64];   // Adjust the size as needed
-
+// command for setting a specific timer
+void cli_command_timer_set(char* command) {
     // feedback
-    ESP_LOGI(CLI_TAG, "Executing Timer_Start_periodic command");
+    ESP_LOGI(CLI_TAG, "Executing timer_set command");
 
     // skip "timer_rep" part to get to data
-    const char* time_str = trimmed_command + 10;
+    const char* time_str = command + 10;
 
     // parse the argument using sscanf
-    uint16_t milliseconds;
-    int result = sscanf(time_str, "%hu", &milliseconds);
+    uint16_t timer_choice, active, set_value, set_day, set_hours, set_minutes, set_seconds, set_milliseconds, rep_timer, rep_hours, rep_minutes, rep_seconds, rep_milliseconds;
+    int result = sscanf(time_str, "%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu,%hu", &timer_choice-1, &active, &set_value, &set_day, &set_hours, &set_minutes, &set_seconds, &set_milliseconds, &rep_timer, &rep_hours, &rep_minutes, &rep_seconds, &rep_milliseconds);
+    
+    // check if we have parsed 13 values
+    if (result == 12) {
+        // variable to determine if any data reading was invalid
+        uint8_t ret = 0;
 
-    // check if we have parsed the value
-    if (result == 1) {
-        // call the function to start periodic timer
-        // timer_start_periodic(milliseconds);                  // "TEST" to be implemented, if going to set one timer specific, need to sent what timer along. Else create new function to repeat all 4 timers with set ms
+        // write all to cfg if check passed
+        if (active == 0 || active == 1) cfg.timers[timer_choice].timer_active = active; 
+        else ret = -1;
+        if (set_value == 0 || set_value == 1) cfg.timers[timer_choice].set_value = set_value; 
+        else ret = -1;
+        if (set_day >= 1 && set_day <= 7) cfg.timers[timer_choice].set_day = set_day;
+        else ret = -1;
+        if (set_hours >= 0 && set_hours <= 23) cfg.timers[timer_choice].set_hour = set_hours; 
+        else ret = -1;
+        if (set_minutes >= 0 && set_minutes <= 59) cfg.timers[timer_choice].set_min = set_minutes; 
+        else ret = -1;
+        if (set_seconds >= 0 && set_seconds <= 59) cfg.timers[timer_choice].set_sec = set_seconds; 
+        else ret = -1;
+        if (set_milliseconds >= 0 && set_milliseconds < 999) cfg.timers[timer_choice].set_ms = set_milliseconds; 
+        else ret = -1;
+        if (rep_timer == 0 || rep_timer == 1) cfg.timers[timer_choice].repeat_timer = rep_timer; 
+        else ret = -1;
+        if (rep_hours >= 0 && rep_hours <= 23) cfg.timers[timer_choice].repeat_interval_hour = rep_hours; 
+        else ret = -1;
+        if (rep_minutes >= 0 && rep_minutes <= 59) cfg.timers[timer_choice].repeat_interval_min = rep_minutes; 
+        else ret = -1;
+        if (rep_seconds >= 0 && rep_seconds <= 59) cfg.timers[timer_choice].repeat_interval_sec = rep_seconds; 
+        else ret = -1;
+        if (rep_milliseconds >= 0 && rep_milliseconds <= 999) cfg.timers[timer_choice].repeat_interval_ms = rep_milliseconds; 
+        else ret = -1;
+
+        if (ret == -1) {
+            // error log and leave function, data invalid
+            ESP_LOGW(CLI_TAG, "Invalid timer_set command format");
+
+            return;
+        }
+
+        // calculate repeat interval to ms
+        cfg.timers[nvm_cfg.flags.chosen_timer].interval_in_ms = cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour * 3600000 +
+                                        cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min * 60000 +
+                                        cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec * 1000 +
+                                        cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms;
 
         // feedback
-        ESP_LOGI(CLI_TAG, "Done executing Timer_Start_periodic with %hu milliseconds", milliseconds);
+        ESP_LOGI(CLI_TAG, "Done executing timer_set command");
     } else {
-        ESP_LOGW(CLI_TAG, "Invalid Timer_Start_periodic command format");
+        ESP_LOGW(CLI_TAG, "Invalid timer_set command format");
+    }
+}
+
+// command for setting all timers on on repeat for given ms
+void cli_command_timers_all_rep(char* command) {
+    // feedback
+    ESP_LOGI(CLI_TAG, "Executing timers_all_rep command");
+
+    // skip "timers_all_rep" part to get to data
+    const char* time_str = command + 15;
+
+    ESP_LOGE("TEST", "time_str: %s", time_str);
+
+    // parse the argument using sscanf
+    uint32_t milliseconds;
+    int result = sscanf(time_str, "%lu", &milliseconds);
+
+    ESP_LOGE("TEST", "ms time read: %lu, checking if value is valid", milliseconds);
+
+    // check if value is valid
+    if (milliseconds > 0 && milliseconds < 86400000) {        // 86.400.000 is de top value of uint32_t so we can at max do 86.399.999 ms
+        // Check if we have parsed all 1 values
+        if (result == 1) {
+            ESP_LOGE("TEST", "result is good!");
+            // save interval in milliseconds to cfg of each timer
+            for (uint8_t i = 0; i <= MAX_TIMER_COUNT; i++) {
+                ESP_LOGE("TEST", "setting timer [%i] repeat_interval_ms to %lu", i, milliseconds);
+                cfg.timers[i].repeat_interval_ms = milliseconds; 
+            }
+
+            ESP_LOGE("TEST", "call timer_start_periodic_all");
+            // call function to turn on all timers on repeat
+            timer_start_periodic_all(milliseconds);
+        }
+    }
+    else {
+        // feedback
+        ESP_LOGW(CLI_TAG, "Invalid timers_all_rep command format");
     }
 }
 
@@ -145,14 +267,38 @@ void cli_command_cfg_print(char* command) {
     ESP_LOGI(CLI_TAG, "Done executing cfg_print command");
 }
 
+uint16_t timer_choice, active, set_value, set_day, set_hours, set_minutes, set_seconds, set_milliseconds, rep_timer, rep_hours, rep_minutes, rep_seconds, rep_milliseconds;
+
+
 // command for help
 void cli_command_help(char* command) {
     // print list of available commands
-    ESP_LOGI(CLI_TAG, "---------------------------------------------------------------------------------------------------------");
-    ESP_LOGI(CLI_TAG, "| Available commands:                                                                                    |");
-    ESP_LOGI(CLI_TAG, "|  - timer_rep <ms>     Dit is een test functie om de repetetief te laten schakelen op custom tijd       |");
-    ESP_LOGI(CLI_TAG, "|  - set_time <day>,<hours>,<minutes>,<seconds>                                                          |");
-    ESP_LOGI(CLI_TAG, "|  - cfg_print                                                                                           |");
-    ESP_LOGI(CLI_TAG, "|  - help                                                                                                |");
-    ESP_LOGI(CLI_TAG, "---------------------------------------------------------------------------------------------------------");
+    ESP_LOGI(CLI_TAG, "--------------------------------------------------------------------------------------------------------------------------");
+    ESP_LOGI(CLI_TAG, "| Available commands:                                                                                                    |");
+    ESP_LOGI(CLI_TAG, "|  - set_time-day,hours,minutes,seconds;                                                                                 |");
+    ESP_LOGI(CLI_TAG, "|  - timer_set-timer,on/off,output_value,set_day,set_hour,set_min,set_sec,set_ms,repeat,rep_hour,rep_min,rep_sec,rep_ms; |"); 
+    ESP_LOGI(CLI_TAG, "|  - timers_all_rep-ms;                                                                                                  |");
+    ESP_LOGI(CLI_TAG, "|  - cfg_print;                                                                                                          |");
+    ESP_LOGI(CLI_TAG, "|  - help;                                                                                                               |");
+    ESP_LOGI(CLI_TAG, "|                                                                                                                        |");
+    ESP_LOGI(CLI_TAG, "| When writing any command, replace each value designated 'timer' with the value you wish to add.                        |");
+    ESP_LOGI(CLI_TAG, "| Example: set_time-5,12,45,54;                                                                                          |");
+    ESP_LOGI(CLI_TAG, "--------------------------------------------------------------------------------------------------------------------------");
+}
+
+// function to remove whitespaces from cli commands
+void trim_whitespace(char* str) {
+    // trim leading whitespaces
+    while (isspace((unsigned char)*str)) {
+        str++;
+    }
+ 
+    // trim trailing whitespaces
+    char* end = str + strlen(str) - 1;
+    while (end > str && isspace((unsigned char)*end)) {
+        end--;
+    }
+ 
+    // null-terminate the trimmed string
+    *(end + 1) = '\0';
 }

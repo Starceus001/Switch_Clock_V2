@@ -13,7 +13,8 @@
                 "${workspaceFolder}/main",
                 "${workspaceFolder}/components/components/**",
                 "${workspaceFolder}/components/components/ssd1306",
-                "${workspaceFolder}"
+                "${workspaceFolder}",
+                "C:/Users/Guido/esp/esp-idf/components/driver/i2c/include/driver"
             ],
             "browse": {
                 "path": [

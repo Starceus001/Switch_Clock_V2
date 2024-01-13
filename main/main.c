@@ -20,25 +20,25 @@ void app_main(void)
     // init ESP32 pinout
     init_gpio();
 
+    vTaskDelay(50 / portTICK_PERIOD_MS);
+    
+    // init display
+    init_Display();     // init display also inits I2C so this needs to happen before init_ds3232
+
     // read RTC value into nvm_cfg
     xTaskCreate(read_ds3232_task, "ds3232_task", 2048, NULL, 2, NULL);
-
-    // init display
-    init_Display();      // "TEST" To be tested
-
-    // init ms timer that checks scheduled switchmoments and sets outputs
-    ESP_LOGI(MAIN_TAG, "Init ms timer");    // move into init function into task folder
-    // init_ms_timer(); // inside this function, start the timer when the rtc has given it's 1 sec flag (to be in sync with the second)
 
     // print cfg
     cfg_print();
 
+    // start ms and display task (call only once on second core)
+    xTaskCreatePinnedToCore(updateElapsedTimeTask, "updateElapsedTimeTask", 4096*16, NULL, ESP_TASK_PRIO_MAX ,NULL, 1);
+
+    // create task to read cli
+    xTaskCreate(read_cli_constant, "read_cli_constant", 2048*16, NULL, 1, NULL);
+
     // main code (will repeat indefinitely)
     while (1) {
-        // run all functionalities that will continue in sequence until the end
-        // create task to read cli
-        xTaskCreate(read_cli_constant, "read_cli_constant", 2048, NULL, 2, NULL);
-
         // wait 1 second
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

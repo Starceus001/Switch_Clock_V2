@@ -27,8 +27,10 @@
         "font8x8_basic.h": "c",
         "semphr.h": "c",
         "nvs_flash.h": "c",
-        "ctype.h": "c"
+        "ctype.h": "c",
+        "esp_timer.h": "c",
+        "i2c.h": "c"
     },
-    "idf.portWin": "COM3",
+    "idf.portWin": "COM5",
     "idf.flashType": "UART"
 }

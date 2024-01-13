@@ -22,13 +22,10 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 #include <sys/time.h>
-#include "driver/i2c.h"
 #include "esp_sntp.h"
 #include <esp_task_wdt.h>
 #include "driver/uart.h"
 #include <ctype.h>
-// #include "ssd1306.h"
-// #include "font8x8_basic.h"
 
 #include "main.h"
 
@@ -80,17 +77,23 @@ extern void print_cfg();
 extern void print_nvm_cfg();
 
 // --<< cli_task.c >>--
+extern void uart_init();
+
 extern void read_cli_constant();
 
 extern void handle_command(char* command);
 
 extern void cli_command_set_time(char* command);
 
-extern void cli_command_timer_rep(char* command);
+extern void cli_command_timer_set(char* command);
+
+extern void cli_command_timers_all_rep(char* command);
 
 extern void cli_command_cfg_print(char* command);
 
 extern void cli_command_help(char* command);
+
+extern void trim_whitespace(char* str);
 
 // --<< display_task.c >>--
 extern void init_Display();
@@ -101,6 +104,8 @@ extern void Display_Clock();
 
 extern void Display_timer();
 
+extern void update_day_indicator(uint8_t display_line);
+
 // --<< ms_timer_task.c >>--
 extern void updateElapsedTimeTask(void *pvParameters);
 
@@ -110,7 +115,9 @@ extern void set_timer_output(uint8_t timer_number);
 
 extern void timer_callback(void* arg);
 
-extern void timer_start_periodic(uint32_t mseconds, int timer_index);
+extern void timer_start_periodic(int timer_index);
+
+extern void timer_start_periodic_all(uint16_t repeat_all_milliseconds);
 
 // --<< nvs_task.c >>--
 extern void init_NVS();

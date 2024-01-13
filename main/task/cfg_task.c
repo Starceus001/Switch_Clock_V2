@@ -16,7 +16,9 @@ void preset_nvmcfg() {
     nvm_cfg.flags.updateElapsedTimeTask_useonce = false;
     nvm_cfg.flags.timerset_display = false;
     nvm_cfg.flags.display_timer_useonce = false;
-    nvm_cfg.flags.display_repeattimer_useonce = false;
+    nvm_cfg.flags.display_repeattimer_1_3_useonce = false;
+    nvm_cfg.flags.display_repeattimer_2_0_useonce = false;
+    nvm_cfg.flags.display_repeattimer_leaving_lasttime = false;
 
     // init rtc nvm preset values
     nvm_cfg.rtc.day = 0;
@@ -40,6 +42,7 @@ void init_cfg() {
 
     // read the cfg_t struct from NVS
     read_cfg_from_NVS();
+    // write_cfg_to_NVS();      // Switch these out when first flashing a new ESP32, need to write to nvs for the first time
 
     // feedback
     ESP_LOGI(CFG_TAG, "Initialize cfg done");
@@ -89,6 +92,12 @@ void print_nvm_cfg() {
     ESP_LOGI(CFG_TAG, "[FLAGS] clock_flag: %d", nvm_cfg.flags.clock_flag);
     ESP_LOGI(CFG_TAG, "[FLAGS] timer_flag: %d", nvm_cfg.flags.timer_flag);
     ESP_LOGI(CFG_TAG, "[FLAGS] chosen_timer: %d", nvm_cfg.flags.chosen_timer);
+    ESP_LOGI(CFG_TAG, "[FLAGS] updateElapsedTimeTask_useonce: %d", nvm_cfg.flags.updateElapsedTimeTask_useonce);
+    ESP_LOGI(CFG_TAG, "[FLAGS] timerset_display: %d", nvm_cfg.flags.timerset_display);
+    ESP_LOGI(CFG_TAG, "[FLAGS] display_timer_useonce: %d", nvm_cfg.flags.display_timer_useonce);
+    ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_1_3_useonce: %d", nvm_cfg.flags.display_repeattimer_1_3_useonce);
+    ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_2_0_useonce: %d", nvm_cfg.flags.display_repeattimer_2_0_useonce);
+    ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_leaving_lasttime: %d", nvm_cfg.flags.display_repeattimer_leaving_lasttime);
 
     // rtc
     ESP_LOGI(CFG_TAG, "[RTC] day: %d", nvm_cfg.rtc.day);

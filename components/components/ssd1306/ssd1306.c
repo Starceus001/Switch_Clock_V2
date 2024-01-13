@@ -617,14 +617,12 @@ void ssd1306_dump_page(SSD1306_t * dev, int page, int seg)
 	ESP_LOGI(TAG, "dev->_page[%d]._segs[%d]=%02x", page, seg, dev->_page[page]._segs[seg]);
 }
 
-
 void ssd1306_invert_segments(SSD1306_t *dev, int page, int start_byte, int end_byte) {
     for (int seg = start_byte; seg <= end_byte; ++seg) {
         uint8_t *segment = &dev->_page[page]._segs[seg * 8];  // Assuming 8 pixels per byte
-
+ 
         for (int i = 0; i < 8; ++i) {
             segment[i] = ~segment[i];
         }
     }
 }
-
