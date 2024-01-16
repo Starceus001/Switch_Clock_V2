@@ -15,10 +15,11 @@ esp_timer_handle_t periodic_timers_all;
 // function will run every ms to steer display and ms timer
 void updateElapsedTimeTask(void *pvParameters) {
     // define function variables
-    uint64_t elapsedTimeMillis = 0;             // global variable to store elapsed time
+    uint16_t elapsedTimeMillis = 0;             // global variable to store elapsed time
     struct timeval lastUpdateTime;              // declare a variable to store the last update time
     gettimeofday(&lastUpdateTime, NULL);        // get the current time and store it in the lastUpdateTime variable when first running this (only once)
-    static uint64_t elapsedTimeCounter = 100;   // declare a counter to keep track of elapsed time
+    static uint16_t elapsedTimeCounter = 100;   // declare a counter to keep track of elapsed time
+    static uint16_t elapsedTimeCounter_1ms = 1; // declare a counter to keep track of elapsed time in ms
 
     // infinite while loop in task
     while (1) {
@@ -29,14 +30,17 @@ void updateElapsedTimeTask(void *pvParameters) {
         elapsedTimeMillis = (uint64_t)(currentTime.tv_sec - lastUpdateTime.tv_sec) * 1000 +
                             (uint64_t)(currentTime.tv_usec - lastUpdateTime.tv_usec) / 1000;
 
-        // check each ms all timers against system time
-        check_timers_time_to_system_time(elapsedTimeMillis);
+        if (elapsedTimeMillis >= elapsedTimeCounter_1ms) {
+            // check each ms all timers against system time
+            check_timers_time_to_system_time(elapsedTimeMillis);
+            elapsedTimeCounter += 1;
+        }
 
         // LOOP TASK
         // check if 100 milliseconds have passed to update display
         if (elapsedTimeMillis >= elapsedTimeCounter) {
             // update display every 100 milliseconds
-            xTaskCreatePinnedToCore(Display_ssd1306, "Display_ssd1306", 4096*2, NULL, 3 ,NULL, 0);
+            xTaskCreatePinnedToCore(Display_ssd1306, "Display_ssd1306", 4096*2, NULL, 3, NULL, 0);
             // reset the counter only if it's greater than or equal to 100
             elapsedTimeCounter += 100;
         }
@@ -71,17 +75,19 @@ void check_timers_time_to_system_time(uint16_t counting_ms) {
                     set_timer_output(i);
 
                     // call function to set repeat timer
-                    timer_start_periodic(i);
+                    xTaskCreatePinnedToCore(timer_start_periodic, "timer_start_periodic", 4096*16, i, ESP_TASK_PRIO_MAX, NULL, 0);
 
                     // set flag to true
                     cfg.timers[i].setting_timer_output_useonce = true;
-                } else {
+                } else if (cfg.timers[i].repeat_timer == 0){
                     // set output
                     set_timer_output(i);
                 }
             }
         }
     }
+    // task is done, delete itself
+    vTaskDelete(NULL);
 }
 
 // set timer output when timer moment has arrived
@@ -97,9 +103,12 @@ void set_timer_output(uint8_t timer_number) {
 void timer_callback(void* arg) {
     // Cast the argument to the appropriate type
     int timer_index = (int)arg;
+    //feedback 
+    ESP_LOGI(MS_TIMER_TAG, "Timer [%d] callback called", timer_index);
 
     // check if the repeat_timer is set
     if (cfg.timers[timer_index].repeat_timer == 0) {
+        ESP_LOGE("TEST", "stopping repeat callback timers");
         // stop the timer if the flag is set
         esp_timer_stop(periodic_timers[timer_index]);
 
@@ -119,18 +128,37 @@ void timer_callback(void* arg) {
 
 // function to start a periodic timer
 void timer_start_periodic(int timer_index) {
+    ESP_LOGE("TEST", "starting timer_start_periodic");
+
+    // Check if the timer with the same index already exists, stop and delete it
+    if (periodic_timers[timer_index] != NULL) {
+        esp_err_t stop_err = esp_timer_stop(periodic_timers[timer_index]);
+        ESP_ERROR_CHECK(stop_err);
+
+        esp_err_t delete_err = esp_timer_delete(periodic_timers[timer_index]);
+        ESP_ERROR_CHECK(delete_err);
+    }
+
     // create timer arguments
     const esp_timer_create_args_t timer_args = {
         .callback = &timer_callback,
         .arg = (void*)timer_index,
-        .name = "periodic_timer"
+        .name = "periodic_timer",
+        .dispatch_method = ESP_TIMER_TASK
     };
+
+    ESP_LOGE("TEST", "creating timer for repeating");
 
     // create repeat timer
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &periodic_timers[timer_index]));
 
+    ESP_LOGE("TEST", "starting timer for repeating");
+
     // start the repeat timer
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timers[timer_index], cfg.timers[timer_index].interval_in_ms));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timers[timer_index], cfg.timers[timer_index].interval_in_ms*1000));
+
+    // task is done, delete itself
+    vTaskDelete(NULL);
 }
 
 // callback to set all timer outputs (repeat all functionality)
@@ -155,7 +183,7 @@ void timer_all_callback() {
 }
 
 // function to start repeat for all timers (repeat all functionality)
-void timer_start_periodic_all(uint16_t repeat_all_milliseconds) {
+void timer_start_periodic_all() {
     // feedback
     ESP_LOGI(MS_TIMER_TAG, "Starting repeat all timers functionality");
 
@@ -170,9 +198,13 @@ void timer_start_periodic_all(uint16_t repeat_all_milliseconds) {
         cfg.timers[i].repeat_timer = 0;
     }
 
+// "TEST", if already called over CLI once, delete that timer and create a new one with new ms interval.
     // create repeat timer
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &periodic_timers_all));
 
     // start the repeat timer
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timers_all, repeat_all_milliseconds));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timers_all, cfg.timers[0].interval_in_ms*1000));
+
+    // task is done, delete itself
+    vTaskDelete(NULL);
 }

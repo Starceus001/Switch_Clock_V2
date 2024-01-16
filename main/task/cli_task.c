@@ -15,7 +15,7 @@ void read_cli_constant() {
     int buffer_full = 0;
 
     // loop to constantly read UART buffer into my buffer
-    while(1) {
+    while (1) {
         // use scanf to read data from UART into holder
         char holder[BUF_SIZE];  // declare holder variable
         if (scanf("%s", holder) == 1) {
@@ -225,28 +225,21 @@ void cli_command_timers_all_rep(char* command) {
     // skip "timers_all_rep" part to get to data
     const char* time_str = command + 15;
 
-    ESP_LOGE("TEST", "time_str: %s", time_str);
-
     // parse the argument using sscanf
     uint32_t milliseconds;
     int result = sscanf(time_str, "%lu", &milliseconds);
-
-    ESP_LOGE("TEST", "ms time read: %lu, checking if value is valid", milliseconds);
 
     // check if value is valid
     if (milliseconds > 0 && milliseconds < 86400000) {        // 86.400.000 is de top value of uint32_t so we can at max do 86.399.999 ms
         // Check if we have parsed all 1 values
         if (result == 1) {
-            ESP_LOGE("TEST", "result is good!");
             // save interval in milliseconds to cfg of each timer
             for (uint8_t i = 0; i <= MAX_TIMER_COUNT; i++) {
-                ESP_LOGE("TEST", "setting timer [%i] repeat_interval_ms to %lu", i, milliseconds);
-                cfg.timers[i].repeat_interval_ms = milliseconds; 
+                ESP_LOGE(CLI_TAG, "Setting timer [%i] repeat_interval_ms to %lu", i, milliseconds);
+                cfg.timers[i].interval_in_ms = milliseconds; 
             }
-
-            ESP_LOGE("TEST", "call timer_start_periodic_all");
             // call function to turn on all timers on repeat
-            timer_start_periodic_all(milliseconds);
+            timer_start_periodic_all();
         }
     }
     else {
@@ -268,7 +261,6 @@ void cli_command_cfg_print(char* command) {
 }
 
 uint16_t timer_choice, active, set_value, set_day, set_hours, set_minutes, set_seconds, set_milliseconds, rep_timer, rep_hours, rep_minutes, rep_seconds, rep_milliseconds;
-
 
 // command for help
 void cli_command_help(char* command) {

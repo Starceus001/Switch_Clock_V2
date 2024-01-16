@@ -135,7 +135,7 @@ void init_gpio() {
     // Configure digital output pins as outputs
     gpio_config_t digital_output_conf = {
         .pin_bit_mask = (1ULL << OUTPUT_1) | (1ULL << OUTPUT_2) | (1ULL << OUTPUT_3) | (1ULL << OUTPUT_4),
-        .mode = GPIO_MODE_OUTPUT,
+        .mode = GPIO_MODE_INPUT_OUTPUT,
         .intr_type = GPIO_INTR_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .pull_up_en = GPIO_PULLUP_DISABLE,
@@ -266,7 +266,7 @@ void DAG_KNOP_button_pressed() {
             nvm_cfg.rtc.day++;
         }
         // update display day after day button press
-        update_day_indicator(0);
+        update_day_indicator(0, 0, 0);
     }
     // are we writing for timers?
     else if (nvm_cfg.flags.timer_flag == 1) {
@@ -283,7 +283,7 @@ void DAG_KNOP_button_pressed() {
                 cfg.timers[nvm_cfg.flags.chosen_timer].set_day++;
             }
             // update display day after day button press
-            update_day_indicator(2);
+            update_day_indicator(2, 1, nvm_cfg.flags.chosen_timer);
         }
         else {
             ESP_LOGI(BUTTON_TAG, "Timer repeat interval is active, no day change allowed");

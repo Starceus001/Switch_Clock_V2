@@ -104,7 +104,7 @@ extern void Display_Clock();
 
 extern void Display_timer();
 
-extern void update_day_indicator(uint8_t display_line);
+extern void update_day_indicator(uint8_t display_line, uint8_t display_menu, uint8_t timer_choice);
 
 // --<< ms_timer_task.c >>--
 extern void updateElapsedTimeTask(void *pvParameters);
@@ -117,7 +117,7 @@ extern void timer_callback(void* arg);
 
 extern void timer_start_periodic(int timer_index);
 
-extern void timer_start_periodic_all(uint16_t repeat_all_milliseconds);
+extern void timer_start_periodic_all();
 
 // --<< nvs_task.c >>--
 extern void init_NVS();
