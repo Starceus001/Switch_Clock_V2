@@ -129,7 +129,7 @@ void init_gpio() {
     adc2_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
 
     // create task to constantly check analog inputs (buttons)
-    xTaskCreate(analog_button_check_task, "analog_button_check_task", 2048, NULL, 5, NULL);
+    xTaskCreate(analog_button_check_task, "analog_button_check_task", 2048, NULL, 1, NULL);
 
 // DIGITAL OUTPUTS -----------------------------------------------------------------------------------
     // Configure digital output pins as outputs
@@ -169,7 +169,7 @@ void digital_button_isr_handler(void* arg) {
         }
         else {
             // Create a task to handle the button press
-            xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+            xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
 
             // update the last press time (debouncer for digital buttons)
             lastButtonPressTime[buttonPin] = currentTime;
@@ -212,7 +212,7 @@ void analog_button_check_task(void* arg) {
                     if (i == 0) {
                         if ((currentTime - lastPressTime[0]) > pdMS_TO_TICKS(1000)) {
                             // analog button press detected, create a task to handle it
-                            xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+                            xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
 
                             // update the last press time
                             lastPressTime[i] = currentTime;
@@ -222,18 +222,18 @@ void analog_button_check_task(void* arg) {
                     else if (i == 1) {
                         // analog button press detected, create a task to handle it (with special UUR_KNOP buttonPin value)
                         buttonPin = buttonPin+35;
-                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
                     }
                     // seperate call for MS_KNOP as it is on the same pin number as UUR_KNOP, changing buttonPin for switch case
                     else if (i == 4) {
                         // analog button press detected, create a task to handle it (with special MS_KNOP buttonPin value)
                         buttonPin = buttonPin+36;
-                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
                     }
                     // all other analog buttons
                     else {
                         // analog button press detected, create a task to handle it
-                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 5, NULL);
+                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
                     }
                     // update the last press time
                     lastPressTime[i] = currentTime;
@@ -320,6 +320,16 @@ void TIMER_KNOP_button_pressed() {
                 } else {
                     nvm_cfg.flags.timer_flag = 0;
                     nvm_cfg.flags.chosen_timer = 0;     // could be unnecessary but for good measure
+                    // calculate each timers set time in ms to cfg
+                    for (uint8_t i = 0; i <= MAX_TIMER_COUNT; i++) {
+                        cfg.timers[i].set_time_in_ms = cfg.timers[i].set_day * 86400000 +
+                                                    cfg.timers[i].set_hour * 3600000 +
+                                                    cfg.timers[i].set_min * 60000 +
+                                                    cfg.timers[i].set_sec * 1000 +
+                                                    cfg.timers[i].set_ms;
+                        ESP_LOGI("TEST", "[TIMER %d] set_time_in_ms: %llu", i, cfg.timers[i].set_time_in_ms);
+                    }
+
                     // timer menu closed so write all cfg (timer) stuff to nvs
                     write_cfg_to_NVS();
                 }
@@ -434,6 +444,12 @@ void CLOCK_KNOP_button_pressed() {
             nvm_cfg.flags.clock_flag = 1;
         } else {
             nvm_cfg.flags.clock_flag = 0;
+            // calculate ms time from start of week (rtc time)
+            nvm_cfg.flags.current_time_ms = (uint64_t)nvm_cfg.rtc.day * 86400000 +
+                                            (uint64_t)nvm_cfg.rtc.hour * 3600000 +
+                                            (uint64_t)nvm_cfg.rtc.min * 60000 +
+                                            (uint64_t)nvm_cfg.rtc.sec * 1000;
+
             // Set cfg time to RTC
             set_ds3232_time(nvm_cfg.rtc.day, nvm_cfg.rtc.hour, nvm_cfg.rtc.min, nvm_cfg.rtc.sec);
         }
@@ -449,8 +465,8 @@ void UUR_KNOP_button_pressed() {
     // are we writing for clock?
     if (nvm_cfg.flags.clock_flag == 1) {
         // clock is active, did we reach end of hour cycle?
-        if (nvm_cfg.rtc.hour >= 24) {
-            ESP_LOGI(BUTTON_TAG, "Clock hour limit reached (25), resetting to 0");
+        if (nvm_cfg.rtc.hour >= 23) {
+            ESP_LOGI(BUTTON_TAG, "Clock hour limit reached (24), resetting to 0");
             nvm_cfg.rtc.hour = 0;
         }
         // up hour by one

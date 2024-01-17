@@ -37,8 +37,9 @@ struct nvm_cfg_t;
 #define ANALOG_THRESHOLD                        200         // 3V3 gives 255 value, 0V gives 0 value, above 200 is considered HIGH
 #define DS3232_ADDRESS                          0x68        // 7-bit I2C address
 #define MAX_TIMER_COUNT                         3
-#define ANALOG_DEBOUNCE_DELAY_MS                500
-#define DIGITAL_DEBOUNCE_DELAY                  500
+#define MAX_OUTPUT_COUNT                        3
+#define ANALOG_DEBOUNCE_DELAY_MS                250
+#define DIGITAL_DEBOUNCE_DELAY                  250
 
 // cli defines
 #define UART_NUM UART_NUM_1
@@ -67,6 +68,18 @@ typedef struct {
     uint8_t display_repeattimer_leaving_lasttime : 1;
     // display home menu flags
     uint8_t display_clr_scrn_after_clockortimer : 1;
+
+    // counter to hold the current time in ms based on rtc time
+    uint64_t current_time_ms;
+
+    // output flags
+    uint8_t set_out[MAX_OUTPUT_COUNT+1];
+
+    uint8_t rep_out[MAX_OUTPUT_COUNT+1];
+
+    uint8_t out_read_value[MAX_OUTPUT_COUNT+1];
+
+    uint8_t first_run_done[MAX_OUTPUT_COUNT+1];
 } flags_t;
 
 typedef struct {
@@ -76,13 +89,13 @@ typedef struct {
     uint8_t sec;                        // max 60 sec
 } rtc_t;
 
-
 typedef struct {
     uint8_t set_day;                    // max 7 days
     uint8_t set_hour;                   // max 24 hours
     uint8_t set_min;                    // max 60 min
     uint8_t set_sec;                    // max 60 sec
     uint16_t set_ms;                    // max 999 ms
+    uint64_t set_time_in_ms;
     uint8_t timer_active;
     uint8_t set_value;
 
@@ -98,7 +111,7 @@ typedef struct {
 // this struct will be remembered in EEPROM when power turns off
 typedef struct {
     // timers data
-    timers_t timers[MAX_TIMER_COUNT];
+    timers_t timers[MAX_TIMER_COUNT+1];     // needs to be +1 because we start counting at 0 and need to reserve 4 places (0 to 3 = 4)
 } cfg_t;
 
 // this struct will empty when power turns off

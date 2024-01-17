@@ -69,6 +69,8 @@ void print_cfg() {
         ESP_LOGI(CFG_TAG, "[TIMER %d] set_min: %d", i, cfg.timers[i].set_min);
         ESP_LOGI(CFG_TAG, "[TIMER %d] set_sec: %d", i, cfg.timers[i].set_sec);
         ESP_LOGI(CFG_TAG, "[TIMER %d] set_ms: %d", i, cfg.timers[i].set_ms);
+        ESP_LOGI(CFG_TAG, "[TIMER %d] set_time_in_ms: %llu", i, cfg.timers[i].set_time_in_ms);
+
         ESP_LOGI(CFG_TAG, "[TIMER %d] timer_active: %d", i, cfg.timers[i].timer_active);
         ESP_LOGI(CFG_TAG, "[TIMER %d] set_value: %d", i, cfg.timers[i].set_value);
         ESP_LOGI(CFG_TAG, "[TIMER %d] repeat_timer: %d", i, cfg.timers[i].repeat_timer);
@@ -76,6 +78,7 @@ void print_cfg() {
         ESP_LOGI(CFG_TAG, "[TIMER %d] repeat_interval_min: %d", i, cfg.timers[i].repeat_interval_min);
         ESP_LOGI(CFG_TAG, "[TIMER %d] repeat_interval_sec: %d", i, cfg.timers[i].repeat_interval_sec);
         ESP_LOGI(CFG_TAG, "[TIMER %d] repeat_interval_ms: %d", i, cfg.timers[i].repeat_interval_ms);
+        ESP_LOGI(CFG_TAG, "[TIMER %d] interval_in_ms: %lu", i, cfg.timers[i].interval_in_ms);
     }
     ESP_LOGI(CFG_TAG, "------------------------------------------------------");
 
@@ -98,6 +101,12 @@ void print_nvm_cfg() {
     ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_1_3_useonce: %d", nvm_cfg.flags.display_repeattimer_1_3_useonce);
     ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_2_0_useonce: %d", nvm_cfg.flags.display_repeattimer_2_0_useonce);
     ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_leaving_lasttime: %d", nvm_cfg.flags.display_repeattimer_leaving_lasttime);
+
+    // "TEST"
+    ESP_LOGI(CFG_TAG, "[FLAGS] [0] set_out: %d", nvm_cfg.flags.set_out[0]);
+    ESP_LOGI(CFG_TAG, "[FLAGS] [1] set_out: %d", nvm_cfg.flags.set_out[1]);
+    ESP_LOGI(CFG_TAG, "[FLAGS] [2] set_out: %d", nvm_cfg.flags.set_out[2]);
+    ESP_LOGI(CFG_TAG, "[FLAGS] [3] set_out: %d", nvm_cfg.flags.set_out[3]);
 
     // rtc
     ESP_LOGI(CFG_TAG, "[RTC] day: %d", nvm_cfg.rtc.day);

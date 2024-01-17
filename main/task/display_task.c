@@ -30,69 +30,74 @@ void init_Display() {
 void Display_ssd1306(void *pvParameters) {
     struct timeval tv;
     struct tm timeinfo;
-    // enter clock menu
-    if (nvm_cfg.flags.clock_flag == true) {
-        // stop clearing screen
-        nvm_cfg.flags.display_clr_scrn_after_clockortimer = false;
-        Display_Clock();
-    }
-    // enter timer menu
-    else if (nvm_cfg.flags.timer_flag == true){
-        // stop clearing screen
-        nvm_cfg.flags.display_clr_scrn_after_clockortimer = false;
-        Display_timer();
-    }
-    // enter main menu
-    else {
-        if (nvm_cfg.flags.display_clr_scrn_after_clockortimer == false) {
-            // set flag to false so we do not clear screen again
-            nvm_cfg.flags.updateElapsedTimeTask_useonce = false;
-            nvm_cfg.flags.display_clr_scrn_after_clockortimer = true;
-            nvm_cfg.flags.display_timer_useonce = false;
-            nvm_cfg.flags.display_repeattimer_1_3_useonce = false;
-            nvm_cfg.flags.display_repeattimer_2_0_useonce = false;
-
-            // clear screen first time after clock or timer screen
-            ssd1306_clear_screen(&dev,false);
+    
+    // infinite while loop to update display every 100 ms
+    while (1) {
+        // enter clock menu
+        if (nvm_cfg.flags.clock_flag == true) {
+            // stop clearing screen
+            nvm_cfg.flags.display_clr_scrn_after_clockortimer = false;
+            Display_Clock();
         }
-        // get current (system) time
-        gettimeofday(&tv, NULL);
+        // enter timer menu
+        else if (nvm_cfg.flags.timer_flag == true){
+            // stop clearing screen
+            nvm_cfg.flags.display_clr_scrn_after_clockortimer = false;
+            Display_timer();
+        }
+        // enter main menu
+        else {
+            if (nvm_cfg.flags.display_clr_scrn_after_clockortimer == false) {
+                // set flag to false so we do not clear screen again
+                nvm_cfg.flags.updateElapsedTimeTask_useonce = false;
+                nvm_cfg.flags.display_clr_scrn_after_clockortimer = true;
+                nvm_cfg.flags.display_timer_useonce = false;
+                nvm_cfg.flags.display_repeattimer_1_3_useonce = false;
+                nvm_cfg.flags.display_repeattimer_2_0_useonce = false;
 
-        // convert to local time
-        localtime_r(&tv.tv_sec, &timeinfo);
+                // clear screen first time after clock or timer screen
+                ssd1306_clear_screen(&dev,false);
+            }
+            // get current (system) time
+            gettimeofday(&tv, NULL);
 
-        // format to string
-        char strftime_buf[64];
+            // convert to local time
+            localtime_r(&tv.tv_sec, &timeinfo);
 
-        // format time to string
-        strftime(strftime_buf, sizeof(strftime_buf), "%H:%M:%S", &timeinfo);
+            // format to string
+            char strftime_buf[64];
 
-        // get day of week
-        int day_of_week = timeinfo.tm_wday;
+            // format time to string
+            strftime(strftime_buf, sizeof(strftime_buf), "%H:%M:%S", &timeinfo);
 
-        // convert Sunday-based indexing to Monday-based indexing
-        day_of_week = (day_of_week + 6 ) % 7;
+            // get day of week
+            int day_of_week = timeinfo.tm_wday;
 
-        // define needed vars here (needed up next)
-        int char_width = 8;
-        int overline_position = ((day_of_week) * (char_width*2)) + 8;
+            // convert Sunday-based indexing to Monday-based indexing
+            day_of_week = (day_of_week + 6 ) % 7;
 
-        // show days array on display (shown immidiately)
-        ssd1306_display_text(&dev, 0, " S M T W T F S ", 16, false);
-        
-        // show line under chosen day of week
-        for (int i = 0; i < char_width; ++i) {
-            dev._page[1]._segs[overline_position+i] = 0x01;
+            // define needed vars here (needed up next)
+            int char_width = 8;
+            int overline_position = ((day_of_week) * (char_width*2)) + 8;
+
+            // show days array on display (shown immidiately)
+            ssd1306_display_text(&dev, 0, " S M T W T F S ", 16, false);
+            
+            // show line under chosen day of week
+            for (int i = 0; i < char_width; ++i) {
+                dev._page[1]._segs[overline_position+i] = 0x01;
+            }
+
+            // show line defined above here (line under day of week)
+            ssd1306_show_buffer(&dev);
+
+            // show counting time on home page
+            ssd1306_display_text(&dev, 5, strftime_buf, 16, false);
         }
 
-        // show line defined above here (line under day of week)
-        ssd1306_show_buffer(&dev);
-
-        // show counting time on home page
-        ssd1306_display_text(&dev, 5, strftime_buf, 16, false);
+        // add 100 ms delay for task
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
-    // delete task
-    vTaskDelete(NULL);
 }
 
 // function to update display for clock
@@ -271,13 +276,13 @@ void Display_timer(){
         // show output setpoint high or low on timer moment
         switch (cfg.timers[nvm_cfg.flags.chosen_timer].set_value) {
             case 0:
-                ssd1306_display_text(&dev, 6, "Output low    ", 16, false);
+                ssd1306_display_text(&dev, 6, "Output low     ", 16, false);
                 break;
             case 1:
                 ssd1306_display_text(&dev, 6, "Output high    ", 16, false);
                 break;
             default:
-                ESP_LOGW(DISPLAY_TAG, "chosen timer is has no valid set value: %d", nvm_cfg.flags.chosen_timer);
+                ESP_LOGW(DISPLAY_TAG, "chosen timer [%d] has no valid set value: %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].set_value); // "TEST" test this for errors!!
                 break;
         }
     }

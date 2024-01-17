@@ -46,7 +46,7 @@ void read_cli_constant() {
         }
 
         // wait one second until reading the buffer again
-        vTaskDelay(500 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
 
@@ -218,6 +218,37 @@ void cli_command_timer_set(char* command) {
 }
 
 // command for setting all timers on on repeat for given ms
+// void cli_command_timers_all_rep(char* command) {
+//     // feedback
+//     ESP_LOGI(CLI_TAG, "Executing timers_all_rep command");
+
+//     // skip "timers_all_rep" part to get to data
+//     const char* time_str = command + 15;
+
+//     // parse the argument using sscanf
+//     uint32_t milliseconds;
+//     int result = sscanf(time_str, "%lu", &milliseconds);
+
+//     // check if value is valid
+//     if (milliseconds > 0 && milliseconds < 86400000) {        // 86.400.000 is de top value of uint32_t so we can at max do 86.399.999 ms
+//         // Check if we have parsed all 1 values
+//         if (result == 1) {
+//             // save interval in milliseconds to cfg of each timer
+//             for (uint8_t i = 0; i <= MAX_TIMER_COUNT; i++) {
+//                 ESP_LOGE(CLI_TAG, "Setting timer [%i] repeat_interval_ms to %lu", i, milliseconds);
+//                 cfg.timers[i].interval_in_ms = milliseconds; 
+//             }
+//             // call function to turn on all timers on repeat
+//             // timer_start_periodic_all();
+//         }
+//     }
+//     else {
+//         // feedback
+//         ESP_LOGW(CLI_TAG, "Invalid timers_all_rep command format");
+//     }
+// }
+
+// command for setting all timers on on repeat for given ms
 void cli_command_timers_all_rep(char* command) {
     // feedback
     ESP_LOGI(CLI_TAG, "Executing timers_all_rep command");
@@ -239,7 +270,7 @@ void cli_command_timers_all_rep(char* command) {
                 cfg.timers[i].interval_in_ms = milliseconds; 
             }
             // call function to turn on all timers on repeat
-            timer_start_periodic_all();
+            // timer_start_periodic_all();
         }
     }
     else {

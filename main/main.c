@@ -20,27 +20,29 @@ void app_main(void)
     // init ESP32 pinout
     init_gpio();
 
-    vTaskDelay(50 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     
     // init display
     init_Display();     // init display also inits I2C so this needs to happen before init_ds3232
 
     // read RTC value into nvm_cfg
-    xTaskCreate(read_ds3232_task, "ds3232_task", 2048, NULL, 2, NULL);
+    xTaskCreatePinnedToCore(read_ds3232_task, "read_ds3232_task", 2048, NULL, 2, NULL, 0);
 
     // print cfg
     cfg_print();
 
     // start ms and display task (call only once on second core)
-    xTaskCreatePinnedToCore(updateElapsedTimeTask, "updateElapsedTimeTask", 4096*16, NULL, ESP_TASK_PRIO_MAX ,NULL, 1);
+    xTaskCreatePinnedToCore(updateElapsedTimeTask, "updateElapsedTimeTask", 4096*16, NULL, ESP_TASK_PRIO_MAX, NULL, 1);
 
     // create task to read cli
-    xTaskCreate(read_cli_constant, "read_cli_constant", 2048*16, NULL, 1, NULL);
+    xTaskCreatePinnedToCore(read_cli_constant, "read_cli_constant", 2048*16, NULL, 1, NULL, 0);
+
+    xTaskCreatePinnedToCore(Display_ssd1306, "Display_ssd1306", 4096*2, NULL, 4, NULL, 0);
 
     // main code (will repeat indefinitely)
     while (1) {
         // wait 1 second
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }
 

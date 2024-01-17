@@ -109,13 +109,15 @@ extern void update_day_indicator(uint8_t display_line, uint8_t display_menu, uin
 // --<< ms_timer_task.c >>--
 extern void updateElapsedTimeTask(void *pvParameters);
 
-extern void check_timers_time_to_system_time(uint16_t counting_ms);
+// extern void check_timers_time_to_system_time(uint16_t counting_ms);
 
-extern void set_timer_output(uint8_t timer_number);
+// extern void set_timer_output(uint8_t timer_number);
 
-extern void timer_callback(void* arg);
+// extern void timer_callback(void* arg);
 
-extern void timer_start_periodic(int timer_index);
+// extern void timer_start_periodic(int timer_index);
+
+extern void timer_all_callback();
 
 extern void timer_start_periodic_all();
 

@@ -69,7 +69,7 @@ void read_ds3232_task(void *pvParameters) {
         i2c_cmd_link_delete(cmd);
 
         // add delay to give DS3232 time to respond
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
 
         // create a new i2c command link
         cmd = i2c_cmd_link_create();
@@ -107,7 +107,7 @@ void read_ds3232_task(void *pvParameters) {
         }
 
         // wait for 100 sec until rereading rtc (sync purposes)
-        vTaskDelay(pdMS_TO_TICKS(100000));  
+        vTaskDelay(pdMS_TO_TICKS(1000000));  
     }
 }
 
