@@ -12,6 +12,9 @@ struct cfg_t;
 struct nvm_cfg_t;
 
 // Global defines:
+#define DISPLAY_ENABLE                          1           // 1 = enable display, 0 = disable display
+#define FIRST_FLASH                             0           // 1 = first flash, 0 = not first flash
+
 // Digital input pins
 #define DAG_KNOP GPIO_NUM_25
 #define TIMER_KNOP GPIO_NUM_12
@@ -72,14 +75,8 @@ typedef struct {
     // counter to hold the current time in ms based on rtc time
     uint64_t current_time_ms;
 
-    // output flags
-    uint8_t set_out[MAX_OUTPUT_COUNT+1];
-
-    uint8_t rep_out[MAX_OUTPUT_COUNT+1];
-
-    uint8_t out_read_value[MAX_OUTPUT_COUNT+1];
-
-    uint8_t first_run_done[MAX_OUTPUT_COUNT+1];
+    // flag to check if we ran this command, when leaving repeat on any of the timers, we should reset everything back again.
+    uint8_t cli_comm_rep_all : 1;
 } flags_t;
 
 typedef struct {

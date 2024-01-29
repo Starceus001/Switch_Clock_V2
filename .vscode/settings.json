@@ -29,7 +29,8 @@
         "nvs_flash.h": "c",
         "ctype.h": "c",
         "esp_timer.h": "c",
-        "i2c.h": "c"
+        "i2c.h": "c",
+        "esp_intr_alloc.h": "c"
     },
     "idf.portWin": "COM5",
     "idf.flashType": "UART"

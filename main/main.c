@@ -28,20 +28,30 @@ void app_main(void)
     // read RTC value into nvm_cfg
     xTaskCreatePinnedToCore(read_ds3232_task, "read_ds3232_task", 2048, NULL, 2, NULL, 0);
 
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+
     // print cfg
     cfg_print();
 
     // start ms and display task (call only once on second core)
-    xTaskCreatePinnedToCore(updateElapsedTimeTask, "updateElapsedTimeTask", 4096*16, NULL, ESP_TASK_PRIO_MAX, NULL, 1);
+    xTaskCreatePinnedToCore(updateElapsedTimeTask, "updateElapsedTimeTask", 4096*32, NULL, ESP_TASK_PRIO_MAX, NULL, 1);
 
     // create task to read cli
     xTaskCreatePinnedToCore(read_cli_constant, "read_cli_constant", 2048*16, NULL, 1, NULL, 0);
 
+#if DISPLAY_ENABLE
     xTaskCreatePinnedToCore(Display_ssd1306, "Display_ssd1306", 4096*2, NULL, 4, NULL, 0);
+#endif
 
     // main code (will repeat indefinitely)
     while (1) {
-        // wait 1 second
+        // do not update clock time in cfg when in clock menu, this will remove your set time before saving within 10 seconds
+        if (nvm_cfg.flags.clock_flag == 0) {
+            // update clock time in cfg
+            read_system_time_to_cfg();
+        }
+        
+        // wait 10 second
         vTaskDelay(pdMS_TO_TICKS(10000));
     }
 }

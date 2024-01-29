@@ -90,7 +90,7 @@ void read_ds3232_task(void *pvParameters) {
         uint8_t seconds = ((data[0] & 0xF0) >> 4) * 10 + (data[0] & 0x0F);
         uint8_t minutes = ((data[1] & 0xF0) >> 4) * 10 + (data[1] & 0x0F);
         uint8_t hours = ((data[2] & 0xF0) >> 4) * 10 + (data[2] & 0x0F);
-        uint8_t day = ((data[4] & 0xF0) >> 4) * 10 + (data[4] & 0x0F);
+        uint8_t day = (((data[4] & 0xF0) >> 4) * 10 + (data[4] & 0x0F)) % 7;        // divide by 7, if more than 7, take what is read as value (RTC counts in days for month so into the next week if not set periodically)
         uint8_t month = ((data[5] & 0x10) >> 4) * 10 + (data[5] & 0x0F);
         uint16_t year = ((data[6] & 0xF0) >> 4) * 10 + (data[6] & 0x0F) + 2000;
 

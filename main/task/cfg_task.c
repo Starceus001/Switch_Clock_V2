@@ -40,9 +40,12 @@ void init_cfg() {
     // init nvs
     init_NVS();
 
-    // read the cfg_t struct from NVS
+    // read the cfg_t struct from NVS (or write on first flash)
+#if FIRST_FLASH
+    write_cfg_to_NVS();
+#else
     read_cfg_from_NVS();
-    // write_cfg_to_NVS();      // Switch these out when first flashing a new ESP32, need to write to nvs for the first time
+#endif
 
     // feedback
     ESP_LOGI(CFG_TAG, "Initialize cfg done");
@@ -101,18 +104,15 @@ void print_nvm_cfg() {
     ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_1_3_useonce: %d", nvm_cfg.flags.display_repeattimer_1_3_useonce);
     ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_2_0_useonce: %d", nvm_cfg.flags.display_repeattimer_2_0_useonce);
     ESP_LOGI(CFG_TAG, "[FLAGS] display_repeattimer_leaving_lasttime: %d", nvm_cfg.flags.display_repeattimer_leaving_lasttime);
-
-    // "TEST"
-    ESP_LOGI(CFG_TAG, "[FLAGS] [0] set_out: %d", nvm_cfg.flags.set_out[0]);
-    ESP_LOGI(CFG_TAG, "[FLAGS] [1] set_out: %d", nvm_cfg.flags.set_out[1]);
-    ESP_LOGI(CFG_TAG, "[FLAGS] [2] set_out: %d", nvm_cfg.flags.set_out[2]);
-    ESP_LOGI(CFG_TAG, "[FLAGS] [3] set_out: %d", nvm_cfg.flags.set_out[3]);
+    ESP_LOGI(CFG_TAG, "[FLAGS] display_clr_scrn_after_clockortimer: %d", nvm_cfg.flags.display_clr_scrn_after_clockortimer);
+    ESP_LOGI(CFG_TAG, "[FLAGS] cli_comm_rep_all: %d", nvm_cfg.flags.cli_comm_rep_all);
 
     // rtc
     ESP_LOGI(CFG_TAG, "[RTC] day: %d", nvm_cfg.rtc.day);
     ESP_LOGI(CFG_TAG, "[RTC] hour: %d", nvm_cfg.rtc.hour);
     ESP_LOGI(CFG_TAG, "[RTC] min: %d", nvm_cfg.rtc.min);
     ESP_LOGI(CFG_TAG, "[RTC] sec: %d", nvm_cfg.rtc.sec);
+    ESP_LOGI(CFG_TAG, "[RTC] current_time_ms: %llu", nvm_cfg.flags.current_time_ms);
     ESP_LOGI(CFG_TAG, "------------------------------------------------------");
 
     // feedback

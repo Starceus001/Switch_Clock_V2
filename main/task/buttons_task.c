@@ -129,7 +129,7 @@ void init_gpio() {
     adc2_config_channel_atten(MSCENONDE_KNOP, ADC_ATTEN_DB_0);
 
     // create task to constantly check analog inputs (buttons)
-    xTaskCreate(analog_button_check_task, "analog_button_check_task", 2048, NULL, 1, NULL);
+    xTaskCreatePinnedToCore(analog_button_check_task, "analog_button_check_task", 2048, NULL, 1, NULL, 0);
 
 // DIGITAL OUTPUTS -----------------------------------------------------------------------------------
     // Configure digital output pins as outputs
@@ -169,7 +169,8 @@ void digital_button_isr_handler(void* arg) {
         }
         else {
             // Create a task to handle the button press
-            xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
+            xTaskCreatePinnedToCore(button_handle_task, "button_handle_task", 4096, (void*)buttonPin, 1, NULL, 0);
+            
 
             // update the last press time (debouncer for digital buttons)
             lastButtonPressTime[buttonPin] = currentTime;
@@ -212,7 +213,7 @@ void analog_button_check_task(void* arg) {
                     if (i == 0) {
                         if ((currentTime - lastPressTime[0]) > pdMS_TO_TICKS(1000)) {
                             // analog button press detected, create a task to handle it
-                            xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
+                            xTaskCreatePinnedToCore(button_handle_task, "button_handle_task", 4096, (void*)buttonPin, 1, NULL, 0);
 
                             // update the last press time
                             lastPressTime[i] = currentTime;
@@ -222,18 +223,18 @@ void analog_button_check_task(void* arg) {
                     else if (i == 1) {
                         // analog button press detected, create a task to handle it (with special UUR_KNOP buttonPin value)
                         buttonPin = buttonPin+35;
-                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
+                        xTaskCreatePinnedToCore(button_handle_task, "button_handle_task", 4096, (void*)buttonPin, 1, NULL, 0);
                     }
                     // seperate call for MS_KNOP as it is on the same pin number as UUR_KNOP, changing buttonPin for switch case
                     else if (i == 4) {
                         // analog button press detected, create a task to handle it (with special MS_KNOP buttonPin value)
                         buttonPin = buttonPin+36;
-                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
+                        xTaskCreatePinnedToCore(button_handle_task, "button_handle_task", 4096, (void*)buttonPin, 1, NULL, 0);
                     }
                     // all other analog buttons
                     else {
                         // analog button press detected, create a task to handle it
-                        xTaskCreate(button_handle_task, "button_handle_task", 2048, (void*)buttonPin, 1, NULL);
+                        xTaskCreatePinnedToCore(button_handle_task, "button_handle_task", 4096, (void*)buttonPin, 1, NULL, 0);
                     }
                     // update the last press time
                     lastPressTime[i] = currentTime;
@@ -256,7 +257,7 @@ void DAG_KNOP_button_pressed() {
     // are we writing for clock?
     if (nvm_cfg.flags.clock_flag == 1) {
         // clock is active, did we reach end of day cycle?
-        if (nvm_cfg.rtc.day == 7) {
+        if (nvm_cfg.rtc.day >= 7) {
             ESP_LOGI(BUTTON_TAG, "Clock day limit reached (7), resetting to 1");
             nvm_cfg.rtc.day = 1;
         }
@@ -273,7 +274,7 @@ void DAG_KNOP_button_pressed() {
         // timer is active, are we not repeating this timer? (not needed for the timer repeat interval as it is less than 1 day only)
         if ((cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 0) || (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 2)) {
             // did we reach end of day cycle?
-            if (cfg.timers[nvm_cfg.flags.chosen_timer].set_day == 7) {
+            if (cfg.timers[nvm_cfg.flags.chosen_timer].set_day >= 7) {
                 ESP_LOGI(BUTTON_TAG, "Chosen timer setmoment day limit reached (7), resetting to 1");
                 cfg.timers[nvm_cfg.flags.chosen_timer].set_day = 1;
             }
@@ -327,7 +328,6 @@ void TIMER_KNOP_button_pressed() {
                                                     cfg.timers[i].set_min * 60000 +
                                                     cfg.timers[i].set_sec * 1000 +
                                                     cfg.timers[i].set_ms;
-                        ESP_LOGI("TEST", "[TIMER %d] set_time_in_ms: %llu", i, cfg.timers[i].set_time_in_ms);
                     }
 
                     // timer menu closed so write all cfg (timer) stuff to nvs
@@ -414,12 +414,31 @@ void HERHAALSCHAKELMOMENT_KNOP_button_pressed() {
                 cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer = 3;
             } else {
                 cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer = 0;
+                
+                if (nvm_cfg.flags.cli_comm_rep_all == true) {
+                    // loop over all timers and set the interval_in_ms for each timer back to original values, also do this for the set_time_in_ms
+                    for (uint8_t i = 0; i <= MAX_TIMER_COUNT; i++) {
+                        // calculate repeat interval to ms for each timer (stopping cli command to repeat all timers)
+                        cfg.timers[i].interval_in_ms = cfg.timers[i].repeat_interval_hour * 3600000 +
+                                                cfg.timers[i].repeat_interval_min * 60000 +
+                                                cfg.timers[i].repeat_interval_sec * 1000 +
+                                                cfg.timers[i].repeat_interval_ms;
 
-                // calculate repeat interval to ms (when closing menu)
-                cfg.timers[nvm_cfg.flags.chosen_timer].interval_in_ms = cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour * 3600000 +
-                                              cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min * 60000 +
-                                              cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec * 1000 +
-                                              cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms;
+                        // calculate set time to ms for each timer (stopping cli command to repeat all timers)
+                        cfg.timers[i].set_time_in_ms = cfg.timers[i].set_day * 86400000 +
+                                                    cfg.timers[i].set_hour * 3600000 +
+                                                    cfg.timers[i].set_min * 60000 +
+                                                    cfg.timers[i].set_sec * 1000 +
+                                                    cfg.timers[i].set_ms;
+                    }
+                }
+                else {
+                    // calculate repeat interval to ms (when closing menu), only if we did not do a cli command before
+                    cfg.timers[nvm_cfg.flags.chosen_timer].interval_in_ms = cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_hour * 3600000 +
+                                                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_min * 60000 +
+                                                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_sec * 1000 +
+                                                cfg.timers[nvm_cfg.flags.chosen_timer].repeat_interval_ms;
+                }
 
                 // no need to write to nvs as we do this when closing the timer menu
             }
@@ -519,7 +538,7 @@ void MINUUT_KNOP_button_pressed() {
     // are we writing for clock?
     if (nvm_cfg.flags.clock_flag == 1) {
         // clock is active, did we reach end of min cycle?
-        if (nvm_cfg.rtc.min == 59) {
+        if (nvm_cfg.rtc.min >= 59) {
             ESP_LOGI(BUTTON_TAG, "Clock min limit reached (60), resetting to 0");
             nvm_cfg.rtc.min = 0;
         }
@@ -574,7 +593,7 @@ void SECONDEN_KNOP_button_pressed() {
     // are we writing for clock?
     if (nvm_cfg.flags.clock_flag == 1) {
         // clock is active, did we reach end of sec cycle?
-        if (nvm_cfg.rtc.sec == 59) {
+        if (nvm_cfg.rtc.sec >= 59) {
             ESP_LOGI(BUTTON_TAG, "Clock sec limit reached (60), resetting to 0");
             nvm_cfg.rtc.sec = 0;
         }
