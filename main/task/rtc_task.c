@@ -158,8 +158,19 @@ void read_system_time_to_cfg() {
     localtime_r(&tv.tv_sec, &timeinfo);
 
     // write local time to cfg
-    nvm_cfg.rtc.day = timeinfo.tm_mday;
     nvm_cfg.rtc.hour = timeinfo.tm_hour;
     nvm_cfg.rtc.min = timeinfo.tm_min;
     nvm_cfg.rtc.sec = timeinfo.tm_sec;
+    if (timeinfo.tm_mday <= 7) {
+        nvm_cfg.rtc.day = timeinfo.tm_mday;
+    } else {
+        nvm_cfg.rtc.day = timeinfo.tm_mday % 7;
+        ESP_LOGE("TEST", "day = %d, hour = %d, min = %d, sec = %d", nvm_cfg.rtc.day, nvm_cfg.rtc.hour, nvm_cfg.rtc.min, nvm_cfg.rtc.sec);        // "TEST" look into what this does when system time counts to 7:24:60:60, will it go to 8:00:00:00? if so, add check to get back to 0:00:00:00 and possibly write it to system time? (some things are dependent on system time).
+        
+        // write new time to rtc and system time
+        set_ds3232_time(nvm_cfg.rtc.day, nvm_cfg.rtc.hour, nvm_cfg.rtc.min, nvm_cfg.rtc.sec);
+
+        // write new rtc time to system time (updating system time back to day 1)
+        set_system_time_from_ds3232(nvm_cfg.rtc.sec+1, nvm_cfg.rtc.min+1, nvm_cfg.rtc.hour+1, nvm_cfg.rtc.day, PRESET_MONTH, PRESET_YEAR);
+    }
 }

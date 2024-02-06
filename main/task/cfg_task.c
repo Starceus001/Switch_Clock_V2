@@ -26,6 +26,9 @@ void preset_nvmcfg() {
     nvm_cfg.rtc.min = 0;
     nvm_cfg.rtc.sec = 0;
 
+    // display
+    nvm_cfg.flags.counting = 0;
+
     // feedback
     ESP_LOGI(CFG_TAG, "Preset nvm_cfg done");
 }

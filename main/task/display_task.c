@@ -56,7 +56,7 @@ void Display_ssd1306(void *pvParameters) {
                 nvm_cfg.flags.display_repeattimer_2_0_useonce = false;
 
                 // clear screen first time after clock or timer screen
-                ssd1306_clear_screen(&dev,false);
+                ssd1306_clear_screen(&dev, false);
             }
             // get current (system) time
             gettimeofday(&tv, NULL);
@@ -71,7 +71,7 @@ void Display_ssd1306(void *pvParameters) {
             strftime(strftime_buf, sizeof(strftime_buf), "%H:%M:%S", &timeinfo);
 
             // get day of week
-            int day_of_week = timeinfo.tm_wday;
+            int day_of_week = timeinfo.tm_mday;
 
             // convert Sunday-based indexing to Monday-based indexing
             day_of_week = (day_of_week + 6 ) % 7;
@@ -82,7 +82,7 @@ void Display_ssd1306(void *pvParameters) {
 
             // show days array on display (shown immidiately)
             ssd1306_display_text(&dev, 0, " S M T W T F S ", 16, false);
-            
+
             // show line under chosen day of week
             for (int i = 0; i < char_width; ++i) {
                 dev._page[1]._segs[overline_position+i] = 0x01;
@@ -93,11 +93,38 @@ void Display_ssd1306(void *pvParameters) {
 
             // show counting time on home page
             ssd1306_display_text(&dev, 5, strftime_buf, 16, false);
+
+            // when in home menu, show that we can refresh display at least 5 times per second
+            display_refresh_visual();
         }
 
-        // add 100 ms delay for task
+        // add 100 ms delay for task (to adhere to the 5 times per second refresh rate for display)
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+}
+
+// function to update a number on display home screen every iteration, showing we adhere to the requirements of 5 times per second refresh rate
+void display_refresh_visual() {
+    const char counting_str[16];
+    
+    // reset counting for next iteration
+    if (nvm_cfg.flags.counting > 5) {
+        nvm_cfg.flags.counting = 0;
+    }
+
+    // turn counting int into string and fill all 14 spaces in this line (else line will be filled with crap)
+    sprintf(counting_str, "       %d     ", nvm_cfg.flags.counting);
+
+    // show on display
+    ssd1306_display_text(&dev, 6, counting_str, 16, false);
+
+    // up counting by one
+    nvm_cfg.flags.counting++;
+}
+
+void Display_clear_screen() {
+    // clear screen
+    ssd1306_clear_screen(&dev, false);
 }
 
 // function to update display for clock
@@ -147,21 +174,16 @@ void Display_Clock() {
 void Display_timer(){
     // define function variables
     char strftime_buf_Timer[64];
-// "TEST" further test this!!
     // are we in the repeat menu?
     if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 1 || cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 3) {
         // if we are in the repeat menu for the last time, srt flag so when leaving fully we can clear for the last time
         if (cfg.timers[nvm_cfg.flags.chosen_timer].repeat_timer == 3) {
             nvm_cfg.flags.display_repeattimer_leaving_lasttime = false;
-
-            // ESP_LOGE(DISPLAY_TAG, "Repeat_timer is 3, setting flag to clear repeat menu screen for the last time");
         }
         // do this only once when we first enter this timer repeat flag high
         if (nvm_cfg.flags.display_repeattimer_1_3_useonce == false) {
             // set nvm_cfg.flags.display_repeattimer_1_3_useonce to true so we do not enter here again
             nvm_cfg.flags.display_repeattimer_1_3_useonce = true;       // needs to be here first, else it will clear twice quickly after one another
-
-            // ESP_LOGE(DISPLAY_TAG, "Repeat_timer is 1, clearing timer screen so we can display repeat menu");
 
             // clear screen (timer screen)
             ssd1306_clear_screen(&dev,false);
@@ -197,10 +219,8 @@ void Display_timer(){
             // change flag so we do not enter here again
             nvm_cfg.flags.display_repeattimer_leaving_lasttime = true;
 
-            // ESP_LOGE(DISPLAY_TAG, "Last time leaving repeat timer, reset everything for next round");
-
             // reset flags for timer repeat menu so when doing a full run, we can do another run
-            nvm_cfg.flags.display_repeattimer_1_3_useonce = false;  // "TEST" see if this works
+            nvm_cfg.flags.display_repeattimer_1_3_useonce = false;
             nvm_cfg.flags.display_repeattimer_2_0_useonce = false;
             nvm_cfg.flags.display_repeattimer_leaving_lasttime = true;
 
@@ -215,8 +235,6 @@ void Display_timer(){
         }
         // do this only once when we first enter this timer flag high (so not after some repeat flag setting!)
         if (nvm_cfg.flags.display_timer_useonce == false) {
-            // ESP_LOGE(DISPLAY_TAG, "Entering timer [%d] menu, run this once for this timer", nvm_cfg.flags.chosen_timer);
-
             // set nvm_cfg.flags.display_timer_useonce to true so we do not enter here again
             nvm_cfg.flags.display_timer_useonce = true;
 
@@ -282,7 +300,7 @@ void Display_timer(){
                 ssd1306_display_text(&dev, 6, "Output high    ", 16, false);
                 break;
             default:
-                ESP_LOGW(DISPLAY_TAG, "chosen timer [%d] has no valid set value: %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].set_value); // "TEST" test this for errors!!
+                ESP_LOGW(DISPLAY_TAG, "chosen timer [%d] has no valid set value: %d", nvm_cfg.flags.chosen_timer, cfg.timers[nvm_cfg.flags.chosen_timer].set_value);
                 break;
         }
     }

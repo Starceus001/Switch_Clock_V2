@@ -26,6 +26,8 @@
 #include <esp_task_wdt.h>
 #include "driver/uart.h"
 #include <ctype.h>
+#include "soc/gpio_reg.h"
+#include "soc/gpio_struct.h"
 
 #include "main.h"
 
@@ -100,7 +102,9 @@ extern void init_Display();
 
 extern void Display_ssd1306(void *pvParameters);
 
-extern void display_refresh_visual(uint8_t counting);
+extern void display_refresh_visual();
+
+extern void Display_clear_screen();
 
 extern void Display_Clock();
 
@@ -109,7 +113,11 @@ extern void Display_timer();
 extern void update_day_indicator(uint8_t display_line, uint8_t display_menu, uint8_t timer_choice);
 
 // --<< ms_timer_task.c >>--
-extern void updateElapsedTimeTask(void *pvParameters);
+// extern void updateElapsedTimeTask(void *pvParameters);
+
+extern void init_ms_outputs_intr();
+
+extern void set_outputs_intr_callback();
 
 // --<< nvs_task.c >>--
 extern void init_NVS();

@@ -34,7 +34,10 @@ void app_main(void)
     cfg_print();
 
     // start ms and display task (call only once on second core)
-    xTaskCreatePinnedToCore(updateElapsedTimeTask, "updateElapsedTimeTask", 4096*32, NULL, ESP_TASK_PRIO_MAX, NULL, 1);
+    // xTaskCreatePinnedToCore(updateElapsedTimeTask, "updateElapsedTimeTask", 4096*16, NULL, ESP_TASK_PRIO_MAX, NULL, 1);
+    
+    // init timer to interrupt each ms
+    init_ms_outputs_intr();
 
     // create task to read cli
     xTaskCreatePinnedToCore(read_cli_constant, "read_cli_constant", 2048*16, NULL, 1, NULL, 0);
@@ -47,7 +50,7 @@ void app_main(void)
     while (1) {
         // do not update clock time in cfg when in clock menu, this will remove your set time before saving within 10 seconds
         if (nvm_cfg.flags.clock_flag == 0) {
-            // update clock time in cfg
+            // update clock time to cfg
             read_system_time_to_cfg();
         }
         

@@ -74,9 +74,16 @@ typedef struct {
 
     // counter to hold the current time in ms based on rtc time
     uint64_t current_time_ms;
+    uint8_t set_out[4];
+    uint8_t rep_out[4];
+    uint8_t out_read_value[4];
+    uint8_t first_run_done[4];
 
     // flag to check if we ran this command, when leaving repeat on any of the timers, we should reset everything back again.
     uint8_t cli_comm_rep_all : 1;
+
+    // display stuff
+    uint8_t counting;
 } flags_t;
 
 typedef struct {
